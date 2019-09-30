@@ -1,0 +1,109 @@
+---
+title: "501_graph_redo"
+author: "Penny Kahn"
+date: "9/26/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+pat_bar<-read.csv("501_graph_attempt1.csv")
+```
+```{r}
+ggplot(pat_bar, aes(x=alga, y=no_genes, fill=species, color=affiliation))+
+  geom_col(stat="identity", position=position_dodge())+
+  theme_bw()+
+  scale_fill_manual()
+```
+
+```{r}
+pat_bar2 <- pat_bar %>%
+  mutate(sp_affiliation = str_c(species, affiliation, sep = ", ")) %>%
+  group_by(alga, species) %>% 
+  mutate(prop = no_genes/sum(no_genes))
+```
+
+```{r}
+ggplot(pat_bar2, aes(x=alga, y=no_genes, fill=species, alpha=affiliation))+
+  geom_col(stat="identity", position=position_dodge())+
+  scale_fill_manual(values=c("cornflowerblue", "gold"))+
+  scale_alpha_discrete(range=c(0.4,1.0))+
+  theme_minimal()
+```
+maybe figure out how to put these next to each other but keep them stacked
+
+...wait thats exactly what the other paper did you idiot
+```{r}
+ggplot(pat_bar2, aes(x=alga, y=no_genes, fill=species, alpha=affiliation))+
+  geom_col(stat="identity", position=position_fill())+
+  scale_fill_manual(values=c("cornflowerblue", "gold"))+
+  scale_alpha_discrete(range=c(0.4,1.0))+
+  theme_minimal()
+```
+
+```{r}
+pie<-read.csv("501_graph_attempt2.csv")
+```
+
+```{r}
+pie %>% 
+  select(species, location, number) %>% 
+  group_by(species) %>% 
+  mutate(prop = number/sum(number)) %>% 
+  ggplot(aes(x=reorder(location, -prop), y=prop, fill=species))+
+    geom_col(stat="identity", position=position_dodge())
+```
+```{r}
+pie %>% 
+  select(species, location, number) %>% 
+  group_by(species) %>% 
+  mutate(prop = number/sum(number)) %>% 
+  ggplot(aes(x=species, y=prop, fill=reorder(location, -prop)))+
+    geom_col(stat="identity", position=position_dodge())+
+    geom_text(aes(label=number), vjust=-.5, position = position_dodge(0.9), size=3.5)+
+    scale_fill_brewer(palette = "Accent")+
+    theme_minimal()+
+    theme(legend.position = c(0.85, 0.75))
+```
+```{r}
+library(wesanderson)
+pie %>% 
+  select(species, location, number) %>% 
+  group_by(species) %>% 
+  mutate(prop = number/sum(number)) %>% 
+  ggplot(aes(x=species, y=prop, fill=reorder(location, -prop)))+
+    geom_col(stat="identity", position=position_dodge())+
+    geom_text(aes(label=number), vjust=-.5, position = position_dodge(0.9), size=3.5)+
+    scale_fill_manual(values=wes_palette(n=5, name="Moonrise3"))+
+    theme_minimal()+
+    theme(legend.position = c(0.85, 0.75))
+```
+```{r}
+library(wesanderson)
+library(ggthemes)
+pie %>% 
+  select(species, location, number) %>% 
+  group_by(species) %>% 
+  mutate(prop = number/sum(number)) %>% 
+  ggplot(aes(x=species, y=prop, fill=reorder(location, -prop)))+
+    geom_col(stat="identity", position=position_dodge())+
+    geom_text(aes(label=number), vjust=-.5, position = position_dodge(0.9), size=3.5)+
+    labs(x="Species", y="Proportion")+
+    scale_fill_manual(values=wes_palette(n=5, name="Royal2"))+
+    geom_rangeframe() +
+    theme_tufte()+
+    theme(legend.position = c(0.85, 0.75), legend.title = element_blank())
+```
+
+OMG wesanderson palettes:
+
+5 colors
+#>  [1] "BottleRocket1"  "BottleRocket2"  "Rushmore1"      "Rushmore"      
+#>  [5] "Royal1"         "Royal2"         "Zissou1"        "Darjeeling1"   
+#>  [9] "Darjeeling2"    "Chevalier1"     "FantasticFox1"  "Moonrise1"     
+#> [13] "Moonrise2"      "Moonrise3"      "Cavalcanti1"    "GrandBudapest1"
+#> [17] "GrandBudapest2" "IsleofDogs1"    "IsleofDogs2"

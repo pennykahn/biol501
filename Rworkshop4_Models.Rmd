@@ -1,0 +1,309 @@
+---
+title: "501_workshop4_linear models"
+author: "Penny Kahn"
+date: "9/26/2019"
+output: html_document
+---
+#Prediction with linear regression
+We’ll start with linear regression because you are probably most familiar with this type of linear model. The data are from Whitman et al (2004 Nature 428: 175-178), who noticed that the amount of black pigmentation on the noses of male lions increases as they get older. They used data on the proportion of black on the noses of 32 male lions of known age (years) in Tanzania. We will use fit a linear model to these data to predict a lion’s age from the proportion of black in his nose. The data can be downloaded here.
+
+##Read and examine the data
+
+1. Read the data from the file.
+```{r}
+lions <- read.csv("lions.csv")
+```
+
+2. View the first few lines of data to make sure it was read correctly.
+```{r}
+head(lions)
+```
+
+3. Create a scatter plot of the data. Choose the response and explanatory variables with care: we want to predict age from the proportion black in the nose.
+```{r}
+ggplot(lions, aes(x=black, y=age))+
+  geom_point()
+```
+
+
+##Fit a linear model
+1. Fit a linear model to the lion data. Store the output in an lm object. Choose the response and explanatory variables with care: we want to predict age from the proportion black in the nose.
+```{r}
+lm_lions <- lm(age~black, data=lions)
+```
+
+2. Add the best-fit line to the scatter plot. Does the relationship appear linear? From the scatter plot, visually check for any serious problems such as outliers or changes in the variance of residuals.*
+```{r}
+ggplot(lions, aes(x=black, y=age))+
+  geom_point()+
+  geom_smooth(method="lm", se=FALSE)
+```
+
+3. Using the same fitted model object, obtain the estimates for the coefficients, slope and intercept, and standard errors. What is the R2 value for the model fit?**
+
+_Intercept: 0.8790_
+_Slope: 10.6471_
+_R2: 0.6113_
+```{r}
+summary(lm_lions)
+```
+
+4. Obtain 95% confidence intervals for the slope and intercept.
+```{r}
+confint(lm_lions, level = 0.95)
+```
+
+5. Test the fit of the model to the data with an ANOVA table.
+```{r}
+anova(lm_lions)
+```
+
+6. Apply the plot command to the lm object created in (1) to diagnose violations of assumptions (keep hitting <return> in the command window to see all the plots). Recall the assumptions of linear models. Do the data conform to the assumptions? Are there any potential concerns? What options would be available to you to overcome any potential problems with meeting the assumptions?*** Most of the plots will be self-explanatory, except perhaps the last one. “Leverage” calculates the influence that each data point has on the estimated parameters. For example if the slope changes a great deal when a point is removed, that point is said to have high leverage. “Cook’s distance” measures the effect of each data point on the predicted values for all the other data points. A value greater than 1 is said to be worrisome. Points with high leverage don’t necessarily have high Cook’s distance, and vice versa.
+```{r}
+plot(lm_lions)
+```
+
+7. Optional: One of the data points (the oldest lion) has rather high leverage. To see the effect this has on the results, refit the data leaving this point out. Did this change the regression line substantially?
+```{r}
+lions2 <- filter(lions, age < 10)
+lm_lions2 <- lm(lions2)
+summary(lm_lions2)
+```
+```{r}
+fun.1 <- function(x) 1.2938+8.8498*x
+
+ggplot(lions, aes(x=black, y=age))+
+  geom_point()+
+  geom_smooth(method="lm", se=FALSE)+
+  stat_function(fun = fun.1)
+```
+
+##Prediction
+1. Display the data once again in a scatter plot. Add the regression line.
+```{r}
+ggplot(lions, aes(x=black, y=age))+
+  geom_point()+
+  geom_smooth(method="lm", se=FALSE)
+```
+
+2. Add confidence bands to the scatter plot. These are confidence limits for the prediction of mean of lion age at each value of the explanatory variable. You can think of these as putting bounds on the most plausible values for the “true” or population regression line. Note the spread between the upper and lower limits and how this changes across the range of values for age.
+```{r}
+ggplot(lions, aes(x=black, y=age))+
+  geom_point()+
+  geom_smooth(method="lm", se=TRUE)
+```
+
+3. Add prediction intervals to the scatter plot. These are confidence limits for the prediction of new individual lion ages at each value of the explanatory variable. Whereas confidence bands address questions like “what is the mean age of lions whose proportion black in the nose is 0.5 ?”, prediction intervals address questions like “what is the age of that new lion over there, which has a proportion black in the nose of 0.5 ?”.
+```{r}
+predict_lions <- predict(lm_lions, interval="prediction")
+predict_lions <- cbind(lions, predict_lions)
+ggplot(predict_lions, aes(y = age, x = black)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = TRUE) +
+    geom_line(aes(y = lwr), color = "red", linetype = "dashed") +
+    geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+    theme(aspect.ratio = 0.80)
+```
+
+4. Examine the confidence bands and prediction intervals. Is the prediction of mean lion age from black in the nose relatively precise? Is prediction of individual lion age relatively precise? Could this relationship be used in the field to age lions?
+
+_The prediciton of the mean lion age is pretty precise, but the prediction of an individual lion ranges more than 5 years which appears to be a substantial portion of their whole life. So I think this is not a very good predictor if you care about an actual age by year._
+
+#Light and circadian rhythms
+Our second example fits a linear model with a categorical explanatory variable. The data are from an experiment by Wright and Czeisler (2002. Science 297: 571) that re-examined a previous claim that light behind the knees could reset the circadian rhythm of an individual the same way as light to the eyes. One of three light treatments was randomly assigned to 22 subjects (a three-hour episode of bright lights to the eyes, to the knees, or to neither). Effects were measured two days later as the magnitude of phase shift in each subject’s daily cycle of melatonin production, measured in hours. A negative measurement indicates a delay in melatonin production, which is the predicted effect of light treatment. The data can be downloaded here.
+
+##Read and examine the data
+1. Read the data from the file.
+```{r}
+knees <- read.csv("knees.csv")
+```
+
+2. View the first few lines of data to make sure it was read correctly.
+```{r}
+head(knees)
+```
+
+3. Plot the phase shift data, showing the individual data points in each treatment group.
+```{r}
+ggplot(knees, aes(x=treatment, y=shift))+
+  geom_jitter()
+```
+
+4. Determine whether the categorical variable “treatment” is a factor. If not a factor, convert treatment to a factor using the factor command. This will be convenient when we fit the linear model.
+
+_Already a factor for me_
+
+5. Use the levels command on the factor variable “treatment” to see how R has ordered the different treatment groups. The order will be alphabetical, by default. Conveniently, you will find that the control group is listed first in the alphabetical sequence. (As you are about to analyze these data with a linear model in R, can you think of why having the control group first in the order is convenient?)
+```{r}
+levels(knees$treatment)
+```
+
+6. To get practice, change the order of the levels so that the “knee” treatment group is second in the order, after “control”, and the “eyes” group is listed third.
+```{r}
+knees$treatment <- factor(knees$treatment, levels=c("control","knee","eyes"))
+```
+
+7. Plot the phase shift data again to see the result.
+```{r}
+ggplot(knees, aes(x=treatment, y=shift))+
+  geom_jitter()
+```
+
+##Fit a linear model
+1. Fit a linear model to the light treatment data. Store the output in an lm object.
+```{r}
+lm_knees <- lm(shift~treatment, data=knees)
+```
+
+2. Create a graphic that illustrates the fit of the model to the data. In other words, include the predicted (fitted) values to your plot.
+```{r}
+library(visreg)
+```
+```{r}
+visreg(lm_knees)
+```
+
+3. Use plot to check whether the assumptions of linear models are met in this case. Examine the plots. Are there any potential concerns? There are several options available to you if the assumptions are not met (transformations, robust regression methods, etc.) but we don’t seem to need them in this case.
+```{r}
+plot(lm_knees)
+```
+
+4. Remember from lecture that R represents the different levels of the categorical variable using dummy variables. To peek at this behind-the-scenes representation, use the model.matrix command on the model object from your linear model fit in step (1). The output should have a column of 1’s for the intercept and two additional columns representing two of the three levels of the explanatory variable. Why is one level left out? Which level is the one not represented by a dummy variable?*
+_The level not represented is the control variable. This is because the control column of 1's then 0's and 0's would create redundancy which "makes computers blow up. By looking at the second two columns we know with certainty what the third one has to be._
+```{r}
+model.matrix(lm_knees)
+```
+
+5. Using the lm model object, obtain the parameter estimates (coefficients) along with standard errors. Examine the parameter estimates. If you’ve done the analysis correctly, you should see the three coefficients. Rounded, they are -0.309, -0.027, and -1.24. What do each of these coefficients represent – what is being estimated by each value?** Note that the output will also include an R2 value. This is loosely interpretable as the “percent of the variance in phase shift that is explained by treatment.”
+
+_The coefficient labeled "(Intercept)" represents the mean of the control group_
+_The coefficient labeled "treatmentknee" represents the difference in mean between the knee and control groups_
+_The coefficient labeled "treatmenteyes" representsthe difference in mean between the eyes and control groups_
+```{r}
+summary(lm_knees)
+```
+
+6. The P-values associated with the three coefficients are generally invalid. Why? Under what circumstance might one of the P-values be valid?***
+_These p-values are _
+
+7. Obtain 95% confidence intervals for the three parameters.
+```{r}
+confint(lm_knees, level = 0.95)
+```
+
+8. Test the effect of light treatment on phase shift with an ANOVA table.
+```{r}
+anova(lm_knees)
+```
+
+9. Produce a table of the treatment means using the fitted model object, along with standard errors and confidence intervals. Why are these values not the same as those you would get if you calculated means and SE’s separately on the data from each treatment group?
+```{r}
+library(emmeans)
+```
+```{r}
+emmeans(lm_knees, "treatment", data=knees)
+```
+
+#Fly sex and longevity
+We analyzed these data previously in our graphics workshop. Here we will analyze them further by fitting a linear model to the data.
+
+The data are from L. Partridge and M. Farquhar (1981), Sexual activity and the lifespan of male fruit flies, Nature 294: 580-581. The experiment placed male fruit flies with varying numbers of previously-mated or virgin females to investigate whether mating activity affects male lifespan. To begin, download the file fruitflies.csv from here.
+
+The linear model will have longevity as the response variable, and two explanatory variables: treatment (categorical) and thorax length (numerical; representing body size). The goal will be to compare differences in fly longevity among treatment groups, correcting for differences in thorax length. Correcting for thorax length will possibly improve the estimates of treatment effect. The method is also known as analysis of covariance, or ANCOVA.
+
+##Read and examine data
+1. Read the data from the file.
+```{r}
+flies <- read.csv("fruitflies.csv")
+```
+
+2. View the first few lines of data to make sure it was read correctly.
+```{r}
+head(flies)
+```
+
+3. Determine whether the categorical variable “treatment” is a factor. If not a factor, convert treatment to a factor. This will be convenient when we fit the linear model.
+_Already a factor for me_
+
+4. Use the “levels” command on the factor variable “treatment” to see how R has ordered the different treatment groups (should be alphabetically).
+```{r}
+levels(flies$treatment)
+```
+
+5. Change the order of the categories so that a sensible control group is first in the order of categories. Arrange the order of the remaining categories as you see fit.
+```{r}
+flies$treatment<- factor(flies$treatment, levels=c("no females added", "1 pregnant female", "1 virgin female", "8 pregnant females", "8 virgin females"))
+```
+
+6. Optional: This repeats an exercise from the graphics workshop. Create a scatter plot, with longevity as the response variable and body size (thorax length) as the explanatory variable. Use a single plot with different symbols (and colors too, if you like) for different treatment groups. Or make a multipanel plot using the lattice or ggplot2 package.
+```{r}
+ggplot(flies, aes(x=thorax.mm, y=longevity.days, shape=treatment, color=treatment))+
+  geom_point()
+```
+```{r, fig.height=2, fig.width=10}
+ggplot(flies, aes(x=thorax.mm, y=longevity.days, color=treatment))+
+  geom_point()+
+  facet_wrap(~treatment, nrow=1)
+```
+
+
+
+##Fit a linear model
+1. Fit a linear model to the fly data, including both body size (thorax length) and treatment as explanatory variables. Place thorax length before treatment in the model formula. Leave out the interaction term for now – we’ll assume for now that there is no interaction between the explanatory variables thorax and treatment.
+```{r}
+lm_flies <- lm(longevity.days ~ thorax.mm + treatment, data=flies)
+```
+
+2. Use plot to check whether the assumptions of linear models are met in this case. Are there any potential concerns? If you have done the analysis correctly, you will see that the variance of the residuals is not constant, but increases with increasing fitted values. This violates the linear model assumption of equal variance of residuals.
+```{r}
+plot(lm_flies)
+```
+
+3. Attempt to fix the problem identified in step (3) using a log-transformation of the response variable. Refit the model and reapply the graphical diagnostic tools to check assumptions. Any improvements? (To my eye the situation is improved but the issue has not gone away entirely.) Let’s continue anyway with the log-transformed analysis.
+```{r}
+flies2<- mutate(flies, log_long = log(longevity.days))
+lm_flies2 <- lm(log_long ~ thorax.mm + treatment, data=flies2)
+plot(lm_flies2)
+```
+
+4. Visualize the fit of the model to the data using the visreg package. Try two different possibilities. In the first, plot the fit of the response variable to thorax length separately for each treatment group. In the second, plot the fit of the data to treatment, conditioning on the value of the covariate (thorax length).
+```{r}
+
+```
+
+5. Obtain the parameter estimates and standard errors for the fitted model. Interpret the parameter estimates. What do they represent*? Which treatment group differs most from the control group?
+```{r}
+
+```
+
+6. Obtain 95% confidence intervals for the treatment and slope parameters.
+```{r}
+
+```
+
+7. Test overall treatment effects with an ANOVA table. Interpret each significance test – what exactly is being tested?
+```{r}
+
+```
+
+8. Refit the model to the data but this time reverse the order in which you entered the two explanatory variables in the model.
+```{r}
+
+```
+
+9. Test the treatment effects with an ANOVA table. Why isn’t the table identical to the one from your analysis in (7)**?
+```{r}
+
+```
+
+10. Our analysis so far has assumed that the regression slopes for different treatment groups are the same. Is this a valid assumption? We have the opportunity to investigate just how different the estimated slopes really are. To do this, fit a new linear model to the data, but this time include an interaction term between the explanatory variables.
+The parameters will be more complicated to interpret in the model including an interaction term, so lets skip this step. Instead, go right to the ANOVA table to test the interaction term using the new model fit. Interpret the result. Does it mean that the interaction term really is zero?
+```{r}
+
+```
+
+11. Another way to help assess whether the assumption of no interaction is a sensible one for these data is to determine whether the fit of the model is “better” when an interaction term is present or not, and by how much. We will learn new methods later in the course to determine this, but in the meantime a simple measure of model fit can be obtained using the adjusted R2 value. The ordinary R2 measures the fraction of the total variation in the response variable that is “explained” by the explanatory variables. This, however, cannot be compared between models that differ in the number of parameters because fitting more parameters always results in a larger R2, even if the added variables are just made-up random numbers. To compare the fit of models having different parameters, use the adjusted R2 value instead, which takes account of the number of parameters being fitted. Use the summary command on each of two fitted models, one with and the other without an interaction term, and compare their adjusted R2 values. Are they much different? If not, then maybe it is OK to assume that any interaction term is likely small and can be left out.
+```{r}
+
+```
+

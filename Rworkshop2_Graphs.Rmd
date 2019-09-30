@@ -1,0 +1,130 @@
+---
+title: "501_Rmodule2_Graphs"
+author: "Penny Kahn"
+date: "9/12/2019"
+output: html_document
+---
+```{r}
+mammals<-read_csv("mammals.csv", na="")
+```
+```{r}
+head(mammals)
+```
+```{r}
+table(mammals$continent)
+```
+```{r}
+mammals$continent[322] <- "AF"
+```
+
+```{r}
+table(mammals$status)
+
+# There are 242 extinct species
+```
+```{r}
+table(mammals$continent, mammals$status)
+
+# Australia looks like it has the greatest number of extinctions relative to number of extant species
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(mammals, aes(x=continent))+
+  geom_bar()+
+  labs(x="Continent", y="Number of species")
+  
+#Reordering bars
+mammals$continent_ordered <- factor(mammals$continent, levels = names(sort(table(mammals$continent), decreasing = TRUE)))
+
+ggplot(mammals, aes(x=continent_ordered))+
+  geom_bar(stat="count")+
+  labs(x="Continent", y="Number of species")
+```
+
+```{r}
+ggplot(mammals, aes(x=mass.grams))+
+  geom_histogram()
+
+```
+```{r}
+# log transforming data
+mammals$log_mass <- log(mammals$mass.grams)
+
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram()
+
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram(binwidth=2)
+
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram(binwidth=1)
+
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram(binwidth=0.5)
+
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram(binwidth=0.1)
+```
+
+```{r}
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram(aes(y = ..density..), closed = "left")
+```
+
+```{r}
+ggplot(mammals, aes(sample = log_mass))+
+  geom_qq()+ 
+  geom_qq_line()
+
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram(aes(y = ..density..), closed = "left")+
+  stat_function(fun = dnorm, args = list(mean = mean(mammals$log_mass, na.rm = TRUE), 
+                sd = sd(mammals$log_mass, na.rm = TRUE))) 
+```
+
+```{r}
+ggplot(mammals, aes(x=status, y=log_mass))+
+  geom_boxplot()+
+  labs(title="Mass of mammals with different statuses")
+
+ggplot(mammals, aes(x=status, y=log_mass))+
+  geom_boxplot(varwidth = TRUE)+
+  labs(title="Mass of mammals with different statuses")
+
+ggplot(mammals, aes(x=status, y=log_mass))+
+  geom_violin()+
+  labs(title="Mass of mammals with different statuses")
+```
+
+```{r}
+ggplot(mammals, aes(x=log_mass))+
+  geom_histogram()+
+  facet_wrap(~mammals$status, ncol=1, scales = "free_y")
+```
+```{r}
+library(dplyr)
+summarize(group_by(mammals, status), ybar = median(log_mass, na.rm = TRUE)) 
+```
+
+```{r}
+fruitflies<-read_csv("fruitflies.csv")
+```
+
+```{r}
+ggplot(fruitflies, aes(treatment, longevity.days))+
+  geom_jitter()
+
+ggplot(fruitflies, aes(treatment, longevity.days))+
+  geom_boxplot()
+
+ggplot(fruitflies, aes(thorax.mm, longevity.days, colour=treatment, shape=treatment))+
+  geom_point()
+
+ggplot(fruitflies, aes(thorax.mm, longevity.days, colour=treatment, shape=treatment))+
+  geom_point()+
+  geom_smooth(method = "lm", size = 1, se = FALSE)
+```
+
+
