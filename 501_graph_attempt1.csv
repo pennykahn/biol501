@@ -1,0 +1,29 @@
+alga,species,affiliation,no_genes
+Green,Bn,Inclusive,65
+Green,Bn,Exclusive,68
+Green,Gt,Inclusive,77
+Green,Gt,Exclusive,32
+Green no red,Bn,Inclusive,64
+Green no red,Bn,Exclusive,10
+Green no red,Gt,Inclusive,108
+Green no red,Gt,Exclusive,35
+Red,Bn,Inclusive,27
+Red,Bn,Exclusive,4
+Red,Gt,Inclusive,51
+Red,Gt,Exclusive,23
+Red no green,Bn,Inclusive,11
+Red no green,Bn,Exclusive,3
+Red no green,Gt,Inclusive,16
+Red no green,Gt,Exclusive,10
+Glaucophyte,Bn,Inclusive,0
+Glaucophyte,Bn,Exclusive,1
+Glaucophyte,Gt,Inclusive,0
+Glaucophyte,Gt,Exclusive,9
+Ambiguous,Bn,Inclusive,94
+Ambiguous,Bn,Exclusive,6
+Ambiguous,Gt,Inclusive,135
+Ambiguous,Gt,Exclusive,12
+Only plantae,Bn,Inclusive,13
+Only plantae,Bn,Exclusive,37
+Only plantae,Gt,Inclusive,15
+Only plantae,Gt,Exclusive,13
