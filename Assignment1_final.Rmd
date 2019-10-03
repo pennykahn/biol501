@@ -5,6 +5,10 @@ output:
   html_document:
     keep_md: TRUE
 ---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.path='Figs/',
+                      warning=FALSE, message=FALSE)
+```
 
 I have chosen a graph from a paper I found on Patrick Keeling's website. There are over 70 authors, so I won't provide a complete citation, but here is an abbreviated one:
 

@@ -6,6 +6,7 @@ output:
     keep_md: TRUE
 ---
 
+
 I have chosen a graph from a paper I found on Patrick Keeling's website. There are over 70 authors, so I won't provide a complete citation, but here is an abbreviated one:
 
 Curtis BA, Tanifuji G, Burki F, Gruber A, Irimia M, et al. (2012) Algal genomes reveal evolutionary mosaicism and the fate of nucleomorphs. _Nature_ 492: 59–65.
@@ -52,8 +53,8 @@ pie %>%
   datatable()
 ```
 
-<!--html_preserve--><div id="htmlwidget-32fe3cd8be3e5feb1edc" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-32fe3cd8be3e5feb1edc">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+<!--html_preserve--><div id="htmlwidget-2581b6115da53b597535" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2581b6115da53b597535">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 
 ## Analyze the good graph
 Here is the code for producing my bar graph:
@@ -79,10 +80,6 @@ pie %>%
               family = "serif")
 ```
 
-```
-## Warning: Ignoring unknown parameters: stat
-```
-
-![](Assignment1_final_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](Figs/unnamed-chunk-4-1.png)<!-- -->
 
 Seeing the distributions side by side in this way allows for much easier comparisons of proportions between the two species. A pattern is still evident that a cytosolic destination is by far the most common, but you can now also see the relative amounts of the other locations. I also present the raw counts above the bars, which makes the amount of data more transparent than percents alone. My color scheme is also easier for people with red-green and monochromacy color-blindness to detect. Finally there is less perceptual distortion because I have not added extra unnecessary dimensions to the graph.
