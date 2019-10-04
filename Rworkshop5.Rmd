@@ -1,0 +1,85 @@
+---
+title: "Rworkshop_5"
+author: "Penny Kahn"
+output: html_document
+---
+```{r}
+library(tidyverse)
+```
+
+
+#Linear mixed-effects models
+In this workshop we will fit linear mixed-effects models to data in R. See the “Fit model” tab of the R tips page for help. You might also need to refer to the Rtips “Graphs & Tables” page to help visualize your results.
+
+Linear mixed-effects models are used when you have random effects, which occurs when multiple measurements are made on randomly sampled units. The measurements from the same natural groups are not independent random samples on their own. Indtead, the units or groups are assumed to be randomly sampled from a “population” of groups. Example situations include
+
+when you divide up plots and apply separate treatments to the parts (plot is the random group)
+when your sampling design is nested, such as quadrats within transects; transects within woodlots; woodlots within districts (transects, woodlots, and districts are all random groups)
+when you take measurements on related individuals (family is the random group)
+when you measure subjects repeatedly (subject is the random group)
+Linear models for mixed effects are implemented in the R command lme4 and lmerTest package (lmerTest includes lme4 plus additional functions). An alternative option is to use the lme method in the nmle package. The methods used to calculate approximate degrees of freedom in lme4 are a bit more accurate than those used in the nmle package, especially when sample size is not large.
+
+To begin using methods for fitting linear mixed-effects models, install (if you have not already done so) and load the lmerTest package.
+
+##Repeatability of a sexual signal trait
+This first data set was extracted from a paper by Griffith and Sheldon (2001, Animal Behaviour 61: 987–993), who measured the white forehead patch of 30 male collared flycatchers in two years on the Swedish island of Gotland. The patch is important in mate attraction, but varies in size from year to year. Our goal here will be to estimate the repeatability of patch length (mm). The data are here.
+
+###Read and examine the data
+1. Read the data from the file.
+```{r}
+flycatcher<-read.csv("flycatcher.csv")
+```
+
+2. View the first few lines of data to make sure it was read correctly.
+```{r}
+head(flycatcher)
+```
+
+3. Create a plot showing the pair of measurements for each individual flycatcher in the two years of study. You can try to make the kind of dot plot I showed in lecture, or see the R tips “Graphs/Tables” page for suggestions on how to plot paired data. Is there evidence of measurement variability between years?
+```{r}
+ggplot(flycatcher, aes(y =patch, x = as.character(year))) +  
+    geom_point(size = 5, col = "firebrick", alpha = 0.5) + 
+    geom_line(aes(group = bird)) +
+    labs(x = "Year", y = "Patch size") + 
+    theme(text = element_text(size = 18), 
+          axis.text = element_text(size = 16), aspect.ratio = 0.80) +
+    theme_classic()
+```
+
+###Fit a linear mixed-effects model
+1. Fit a linear mixed-effects model to the data, treating the individual birds as the random groups. Note: The two measurements on each bird were taken in successive years of the study. For simplicity here, do not include year in the model. (Okay, if you really want to try including year in the model, go ahead. Just make sure to convert it to a character or factor in R so it is not treated as a numeric variable. Recalculate repeatability with this model as described in steps (2) and (3) below. How is the interpretation of repeatability changed?)
+```{r}
+library(lmerTest)
+```
+```{r}
+mod1<-lmer(patch ~ 1 + (1|bird), data = flycatcher)
+mod1
+```
+
+2. Extract parameter estimates (coefficients) from the saved lmer object (the command is the same one we used with lm to get the coefficients table). Inspect the output for the random effects. What are the two sources of random variation? What does the fixed effect refer to?
+```{r}
+summary(mod1)
+```
+
+3. In the output, examine the standard deviations for the random effects. There should be two standard deviations: one for “(Intercept)” and one for “Residual”. This is because the mixed effects model has two sources of random variation: variation among repeat measurements within birds, and true variation among birds in their patch lengths. Which of these two sources corresponds to “(Intercept)” and which to “Residual”?
+
+_The intercept variance shows the true variation in the population because the intercept is the average for the population. The residual variance shows the average variation between the repeated measurements?_
+
+4. Also examine the output for the fixed effect results. The only fixed effect in the model formula is the grand mean of all the patch length measurements. It is called “(Intercept)”, but don’t confuse with the intercept for the random effects. The fixed effect output gives you the estimate of the grand mean and a standard error for that estimate. Notice how the fixed effect output provides estimates of means, whereas the random effects output provides estimates of variances (or standard deviations).
+
+5. Extract the variance components from the fitted model and estimate the repeatability of patch length from year to year*.
+
+_r = varamong / (varamong + varwithin)_
+
+```{r}
+r1 <- 1.243 / (1.243 + 0.358)
+r1
+```
+
+6. Interpret the measure of repeatability obtained in the previous step. If the repeatability you obtained is less than 1.0, what is the source of the variation among measurements within individuals. Is it measurement error alone?
+_There is measurement error, but it also could be a bad fit of the model causing the residuals to be higher than is true_
+
+7. Produce a plot of residuals against fitted values. Notice anything odd? There seems to be a slightly positive trend. This isn’t a mistake, but results from “shrinkage” of the best linear unbiased predictors (BLUPs). Consult the lecture notes and the “Fit model” tab at the R tips pages (see the repeatability example under “Fit a linear mixed-effects model”) for additional information on what is happening.**Sdjk**
+```{r}
+plot(mod1)
+```

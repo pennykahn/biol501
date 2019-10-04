@@ -20,6 +20,14 @@ This paper discusses two protists: _Bigellowiella natans_ and _Guillardia theta_
 The purpose of my figure of interest (3b) was to show the functional locations of the proteins encoded by secondary endosymbiont genes. The takehome message is that many of the proteins whose genetic origin is with the secondary endosymbiont function in the cytosol and other areas of the host - showing that
 "during the course of host–endosymbiont integration proteins often acquire new functions and/or new locations in which to function." 
 
+
+
+
+
+
+
+
+
 ## Analyze the bad graph
 
 ![](https://pennykahn.github.io/biol501/pat_graph2.png)
@@ -53,8 +61,8 @@ pie %>%
   datatable()
 ```
 
-<!--html_preserve--><div id="htmlwidget-2581b6115da53b597535" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-2581b6115da53b597535">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+<!--html_preserve--><div id="htmlwidget-053a6c442d326f3d028c" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-053a6c442d326f3d028c">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 
 ## Analyze the good graph
 Here is the code for producing my bar graph:
