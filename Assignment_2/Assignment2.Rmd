@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(here))
 ```
 
 # Introduction
@@ -24,17 +25,17 @@ Jacobeen, S., Pentz, J.T., Graba, E.C., Brandys, C.G., Ratcliff, W.C., Yunker, P
 
 The paper I have chosen is from a group at the Georgia Institute of Technology that studies the evolution of multicellularity and multicellular complexity using a yeast model. They have experimentally evolved several independent populations of multicellular yeast from a commonly used unicellular lab strain. Their experimental evolution method involves selecting individual units (i.e. clusters) that settle out of liquid media most rapidly, and consequently only the largest clusters survive each selection event. Over many generations of this selection regime, cluster size has increased despite physical challenges associated with cellular packing and mechanical stress.
 
-The study I have chosen invesitgates the factors that enable this system to overcome physical challenges which constrain cluster size. For example, as the cluster is growing, cells in the center are dividing and become overcrowded. The cells push against each other and cause the cluster to fracture. The authors have found that one mechanism for growing larger clusters by avoiding fracture is to increase cell size. Cluster size scales with cell size, so there are fewer cell divisions needed to achieve a large size. Another way to pack tightly is to increase cell aspect ratio - hot dog shapes are easier to pack tightly than spheres. Making cells larger and more elongate allow clusters to grow larger without experiencing as much internal physical stress.
+The study I have chosen invesitgates the factors that enable this system to overcome physical challenges which constrain cluster size. For example, as the cluster is growing, cells in the center are dividing and become overcrowded. The cells push against each other and cause the cluster to fracture. The authors have found that one mechanism for growing larger clusters by avoiding fracture is to increase cell size. Cluster size scales with cell size, so there are fewer cell divisions needed to achieve a large size. Another way to pack tightly is to increase cell aspect ratio - hot dog shapes are easier to pack tightly than spheres. Making cells larger and more elongate allows clusters to grow larger without experiencing as much internal physical stress.
 
-![](https://pennykahn.github.io/biol501/cluster.png)
+![](https://pennykahn.github.io/biol501/Assignment_2/cluster.png)
 
 # Describe the Data
 
 The data I will use are from a plot showing the relationship between number of cells and cluster size at two timepoints in the evolution experiment. The response variable is number of cells in a cluster, and the explanatory variables are cluster size (continuous) and timepoint (categorical). Each individual cluster has a measurement for size (radius, μm) and number of cells, as well as a timepoint (either Week 1 or Week 8). All individuals were measured from the same population which experienced daily selection events for large size. Let's look at the data to get an idea of the patterns.
 
-First I'll read the data into a table called "snowflake". Lets take a look at it using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
+First I'll read the data into a table called "snowflake". Let's take a look at it using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
 ```{r}
-snowflake <- read_csv("mod_attempt2.csv")
+snowflake <- read_csv(here::here("Assignment_2", "mod_attempt2.csv"))
 datatable(snowflake)
 ```
 
