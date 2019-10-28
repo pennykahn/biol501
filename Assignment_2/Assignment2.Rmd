@@ -73,63 +73,101 @@ A linear model fit to these data will provide us with estimates for slope and in
 4. Adding a second order polynomial factor will fit the data better than a straight line.
 
 # Fit a Linear Model
->Fit a linear model to the data in R. Explain in words the model you fit.
+I don't think this is necessary for the assignment, but I'm going to fit a few models (instead of just one) with increasing complexity to show how different models fit the data. I think it's useful to show how each added term affects the model, and discuss the changing implications for interpretation of the data.
 
->Interpret the output. To assess biological significance, explain the parameter estimates (magnitudes). 
->What do they mean and what are your conclusions based on these parameter estimates. To assess statistical significance, explain the null hypotheses and interpret the test results.
+## The simplest linear model
 
->Visualize the model fit to the data. Explain what the graph is showing.
-
-### The simplest linear model
+This first model will be the simplest. It will look at the overall relationship between cluster size (explanatory) and number of cells in a cluster (response). The output we get from this model will give us estimates for slope and intercept of one line (y = b0 + b1X1) that fits the entire dataset.
 ```{r}
 mod_1 <- lm(no_cells ~ radius, data = snowflake)
 summary(mod_1)
 ```
+
+The (Intercept) estimate gives the intercept of the line, but it's not very biologically relevant as it is not possible to have a cluster size of 0 μm. In fact a single yeast cell has a radius of about 2.5 to 5 μm. This value determines the line's position on the y-axis. The model picks a position that will minimize reisduals. In this case, for the purpose of the model, when cluster radius is 0 the number of cells is -123.364.
+
+The "radius" estimate gives us the slope of the line. In this simplest model, with every 1 μm increase in cluster radius, there is a cell number increase of 9.599. The sign of the value demonstrates a positive relationship between cluster size and number of cells in a cluster, which again should be obvious.
+
+I'll perform an ANOVA to test our first model against a null hypothesis of no relationship.
 ```{r}
 anova(mod_1)
 ```
+
+This ANOVA provides us with a p-value for comparing the model we have created (mod1) with a null model which assumes no positive or negative relationship between the variables. The null model tries to fit the data to the average response. The anova yields a p-value of 2.106e-06, so based on p-value alone our simple model fits the data better than the null model. We can conclude there is a relationship between cluster size and number of cells.  
+
+Now let's visualize the fit of the model to the data. I'll use the geom_abline() function to easily specify intercept and slope, which I have taken from the model output.
 ```{r}
 plot + 
   geom_abline(intercept = -123.364, slope = 9.599)
 ```
 
-### Adding timepoint variable
+This graph simply shows a positive relationship. Number of cells in a cluster increases with cluster radius. We can see the line doesn't fit the data perfectly. It mostly goes down the middle of two groups: samples from week 1 and week 8. I think it's easy to see that there should be separate lines for each timepoint.
+
+## Adding timepoint variable
+
+>Fit a linear model to the data in R. Explain in words the model you fit.
+
 ```{r}
 mod_2 <- lm(no_cells ~ radius + week, data = snowflake)
 summary(mod_2)
 ```
+
+>Interpret the output. To assess biological significance, explain the parameter estimates (magnitudes). 
+
 ```{r}
 anova(mod_2, mod_1)
 ```
+
+>What do they mean and what are your conclusions based on these parameter estimates. To assess statistical significance, explain the null hypotheses and interpret the test results.
+
 ```{r}
 plot +
   geom_abline(intercept = -192.6535, slope = 14.2644) +
   geom_abline(intercept = (-192.6535 - 154.7785), slope = 14.2644)
 ```
 
+>Visualize the model fit to the data. Explain what the graph is showing.
 
-### Interaction component
+## Interaction component
+>Fit a linear model to the data in R. Explain in words the model you fit.
+
 ```{r}
 mod_3 <- lm(no_cells ~ radius * week, data = snowflake)
 summary(mod_3)
 ```
+
+>Interpret the output. To assess biological significance, explain the parameter estimates (magnitudes). 
+
 ```{r}
 anova(mod_3, mod_2)
 ```
+
+>What do they mean and what are your conclusions based on these parameter estimates. To assess statistical significance, explain the null hypotheses and interpret the test results.
+
 ```{r}
 plot + 
   geom_abline(intercept = -314.641, slope = 18.322) +
   geom_abline(intercept = (-314.641 + 80.791), slope = (18.322 - 7.235))
 ```
 
-### Polynomial factor
+>Visualize the model fit to the data. Explain what the graph is showing.
+
+## Polynomial factor
+
+>Fit a linear model to the data in R. Explain in words the model you fit.
+
 ```{r}
 mod_4 <- lm(no_cells ~ poly(radius, 2, raw = TRUE) * week, data = snowflake)
 summary(mod_4)
 ```
+
+>Interpret the output. To assess biological significance, explain the parameter estimates (magnitudes).
+
 ```{r}
 anova(mod_4, mod_3)
 ```
+
+>What do they mean and what are your conclusions based on these parameter estimates. To assess statistical significance, explain the null hypotheses and interpret the test results.
+
 ```{r}
 poly1 <- function(x) 197.9767 - 21.4283 * x + 0.7246 * x^2
 poly2 <- function(x) (197.9767 - 210.8983) + (-21.4283 + 19.6616) * x + (0.7246 - 0.5435) * x^2
@@ -141,7 +179,24 @@ plot +
   ylim(0, 500)
 ```
 
+>Visualize the model fit to the data. Explain what the graph is showing.
+
 # Conclusions
+```{r}
+week1 <- snowflake %>% 
+  filter(week == "Week 1")
+week8 <- snowflake %>% 
+  filter(week == "Week 8")
+
+plot +
+  geom_vline(xintercept = mean(week1$radius), linetype="dashed", color = "tomato") +
+  geom_vline(xintercept = mean(week8$radius), linetype="dashed", color = "mediumturquoise") +
+  geom_hline(yintercept = mean(week1$no_cells), linetype="dashed", color = "tomato") +
+  geom_hline(yintercept = mean(week8$no_cells), linetype="dashed", color = "mediumturquoise") +
+  geom_segment(aes(x = mean(week1$radius), y = mean(week1$no_cells), 
+                   xend = mean(week8$radius), yend = mean(week8$no_cells)), 
+                   arrow = arrow())
+```
 >Address how well the statistical assumptions of your analysis were met. How did you handle violations?
 
 >State the overall conclusions reached from your analyses of biological and statistical significance.
