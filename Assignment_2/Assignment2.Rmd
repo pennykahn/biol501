@@ -33,9 +33,13 @@ The study I have chosen invesitgates the factors that enable this system to over
 
 The data I will use are from a plot showing the relationship between number of cells and cluster size at two timepoints in the evolution experiment. The response variable is number of cells in a cluster, and the explanatory variables are cluster size (continuous) and timepoint (categorical). Each individual cluster has a measurement for size (radius, μm) and number of cells, as well as a timepoint (either Week 1 or Week 8). All individuals were measured from the same population which experienced daily selection events for large size. Let's look at the data to get an idea of the patterns.
 
-First I'll read the data into a table called "snowflake". Let's take a look at it using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
+First I'll read the data into a table called "snowflake" using the here() function from the "here" package. This allows the code to work for someone who has cloned the whole R project to a directory of their choosing anywhere on their local system. 
 ```{r}
 snowflake <- read_csv(here::here("Assignment_2", "mod_attempt2.csv"))
+```
+
+Let's take a look at the data using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
+```{r}
 datatable(snowflake)
 ```
 
@@ -55,10 +59,10 @@ plot
 The first (perhaps obvious) pattern is that as cluster size increases, so does the number of cells within a cluster. This makes sense because cell division (and failure to separate mother and daughter) is how an individual grows. A more meaningful pattern we can see from this graph is that the distribution has shifted toward a larger cluster size from week 1 to week 8, indicating that cluster size has in fact increased over the course of the evolution experiment. Most importantly for the context of the study, we see that for each cluster radius, the week 8 individuals have a lower number of cells than the week 1 individals. Remember, this is because the cells themselves are increasing in size and aspect ratio.
 
 ### Parameters
-A linear model fit to these data will provide us with estimates for slope and intercepts of fit lines depending on what the settings of the model are. 
+A linear model fit to these data will provide us with estimates for slope and intercepts of lines that fit the data depending on the settings of the model. 
                                
 - For a model with one explanatory and one response variable, we will receive an intercept and slope.
-- For a model with two explanatory variables we will receive one intercept, one slope and a value for the difference in intercept of the other line. So we will get two parallel lines with different intercepts.
+- For a model with two explanatory variables we will receive an intercept and a slope for one line, and a value for the difference in intercept of another line. So we will get two parallel lines with different intercepts.
 - For a model with an interaction between two explanatory variables, we will receive an intercept and slope for one line, and values for the differences in the intercept and slope of the other line. So we will get two lines with different slopes and intercepts.
 - If we ask for a model with a second order polynomial (y = b0 + b1X1 + b2X2^2), we will recieve an estimate for the intercept (b0), the coefficient for the first term (b1), and the coefficient for the second term (b2). If we include an interaction with another explanatory variable, we will also receive all the estimates for differences in those three parameters for the second line.
 
