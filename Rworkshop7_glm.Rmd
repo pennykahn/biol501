@@ -1,0 +1,222 @@
+---
+title: "Untitled"
+author: "Penny Kahn"
+date: "10/14/2019"
+output: html_document
+---
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(emmeans))
+suppressPackageStartupMessages(library(visreg))
+```
+
+#Generalized linear models
+In this workshop we will fit general linear models to data, implemented in the R command glm. See the “Fit model” tab of the R tips pages for help.
+
+A generalized linear model is useful when the response variable has a specified distribution other than the normal distribution, and when a transformation of the data is undesirable or impossible. Example situations include binary response data (1 or 0, dead or alive) or data that are counts (number of offspring, leaves, or tattoos). The approach is also useful in the analysis of contingency tables.
+
+##Natural selection in song sparrows
+The song sparrow population on the island of Mandarte has been studied for many years by Jamie Smith, Peter Arcese, and collaborators. The birds were measured and banded and their fates on the island have recorded over many years. Here we will look for evidence of natural selection using the relationship between phenotypes and survival.
+
+The data file, located here, gives survival of young-of-the-year females over their first winter (1=survived, 0=died). The file includes measurements of beak and body dimensions: body mass (g), wing length, tarsus length, beak length, beak depth, beak width (all in mm), year of birth, and survival. These data were analyzed previously in D. Schluter and J. N. M Smith (1986, Evolution 40: 221-231).
+
+
+
+###Read and examine the data
+1. Read the data from the file and inspect the first few lines to make sure it was read correctly.
+```{r}
+sparrow <- read_csv("songsparrow.csv")
+
+head(sparrow)
+```
+
+2. We’ll be comparing survival probabilities among different years. To this end, make sure that year is a categorical variable in your data frame.
+```{r}
+sparrow$year <- as.character(sparrow$year) 
+
+str(sparrow)
+```
+
+3. Plot survival against tarsus length of female sparrows. Use a method to reduce the overlap of points  (the response variable is 0 or 1) to see the patterns more clearly.
+```{r}
+sparrow %>% 
+  ggplot(aes(x = tarsus, y = survival))+
+  geom_jitter(height = .2)+
+  theme_bw()
+```
+
+4. Examine the plot. Can you visualize a trend? Use a smoothing method to see if any trend is present (most methods won’t constrain the curve to lie between 0 and 1, but at least you’ll get an idea).
+```{r}
+sparrow %>% 
+  ggplot(aes(x = tarsus, y = survival))+
+  geom_jitter(height = .2)+
+  geom_smooth(method = "lm")+
+  theme_bw()
+```
+
+
+
+###Fit a generalized linear model
+Let’s start by ignoring the fact that the data are from multiple years. If time permits we can add year to the model to see how much difference it makes.
+
+5. The response variable is binary. What probability distribution is appropriate to describe the error distribution around a model fit? What is an appropriate link function?
+_The appropriate probability distribution is a binomial distribution. The appropriate link function is the logit() or logistic function._
+
+6. Fit a generalized linear model to the data on survival and tarsus length.
+```{r}
+mod1 <- glm(survival ~ tarsus, family = binomial(link="logit"), data = sparrow)
+```
+
+7. Use visreg to visualize the model fit.
+```{r}
+visreg(mod1)
+visreg(mod1, scale = "response")
+```
+
+8. Obtain the estimated regression coefficients for the fitted model. What is the interpretation of these coefficients? On a piece of paper, write down the complete formula for the model shown in the visreg plot.
+
+_survival = 24.6361 - 1.2578 * tarsus_
+```{r}
+summary(mod1)
+```
+
+9. Use the coefficients to calculate the predicted survival probability of a song sparrow having tarsus length 20.5 mm*. Does the result agree with your plot of the fitted regression curve?
+_Yes, it agrees with the visreg plot (-1.1488) - the value is negative because the relationship is negative? And the back transformed probablility is 0.2407083_
+```{r}
+n <- 24.6361 - 1.2578 * 20.5
+n
+
+exp(n)/(1+exp(n))
+```
+
+10. The ratio (-intercept/slope) estimates the point at which probability of survival is changing most rapidly. In toxicology this point is known as the LD50. Calculate this value and compare it visually with the fitted curve. Does it agree? Finally, the slope of the curve at a given value for the explanatory variable x is b x p(x) x ( 1 - p(x) ), where b is the slope coefficient of the fitted logistic regression model and p(x) is the predicted probability of survival at that x.
+
+_So for some reason it's saying the slope at 19.58666 is basically 0?? That doesn't make sense._
+```{r}
+intercept<- 24.6361
+slope <- -1.2578
+LD50 <- -intercept/slope
+LD50
+
+
+b <- -1.2578
+px <- 24.6361 - 1.2578 * 19.58666
+
+b * px * (1-px)
+```
+
+
+11. Calculate the likelihood-based 95% confidence interval for the logistic regression coefficients.
+```{r}
+confint(mod1)
+
+library(MASS)
+confint(mod1, level = 0.95)
+dose.p(mod1, p = 0.5)
+```
+
+12. The summary(z) output for the regression coefficients also includes z values and P-values. What caution would you take when interpreting these P-values? Use a more accurate method to test the null hypothesis of zero slope.
+
+_The z-value (Wald statistic) and P-value test the null hypothesis that β = 0. This is the same as a test of the null hypothesis that the true (population) proportion µ = 0.5. Agresti (2002, Categorical data analysis, 2nd ed., Wiley) says that for small to moderate sample size, the Wald test is less reliable than the log-likelihood ratio test._
+```{r}
+summary(mod1)
+```
+```{r}
+full_mod <- glm(survival ~ tarsus, family = binomial(link="logit"), data = sparrow)
+reduced_mod <- glm(survival ~ 1, family = binomial(link="logit"), data = sparrow)
+anova(full_mod, reduced_mod, test = "Chi")
+
+anova(full_mod, test = "Chi")
+```
+
+* -1.148577; 0.2407491
+** 19.58683
+
+##Crab satellites
+The horseshoe crab, Limulus polyphemus, has two alternative male reproductive morphs. Some males attach to females with a special appendage. The females bring these males with them when they crawl onto beaches to dig a nest and lay eggs, which the male then fertilizes. Other males are satellites, which are unattached to females but crowd around nesting pairs and obtain fertilizations. What attributes of a female horseshoe crab determine the number of satellite males she attracts on the beaches?
+
+The data here provide measurements of 173 female horseshoe crabs and record the number of satellites she attracted. The data were gathered by Brockman (1996. Satellite male groups in horseshoe crabs, Limulus polyphemus. Ethology 102:1-21) and were published by Agresti (2002, Categorical data analysis, 2nd ed. Wiley). The variables are female color, spine condition, carapace width (cm), mass (kg), and number of satellite males.
+
+###Read and examine the data
+1. Read the data from the file. View the first few lines of data to make sure it was read correctly. Use the str command to see the variables and groups.
+```{r}
+crab <- read.csv("satellites.csv")
+str(crab)
+```
+
+2. Plot the number of satellites against the width of the carapace, a measure of female body size. Fit a smooth curve to examine the trend.
+```{r}
+crab %>%
+  ggplot(aes(x = width.cm, y = nsatellites))+
+  geom_point()+
+  geom_smooth(se=FALSE)
+```
+
+
+###Fit a generalized linear model
+3. Fit a generalized linear model to the relationship between number of satellite males and female carapace width. What type of variable is the number of satellites? What probability distribution might be appropriate to describe the error distribution around a model fit? What is the appropriate link function?
+```{r}
+mod2 <- glm(nsatellites ~ width.cm, family = poisson(link="log"), data = crab)
+```
+
+4. Visualize the model fit on the transformed scale, including confidence bands. This plot reminds us that on the transformed scale, glm() is fitting a straight line relationship. (Don’t worry about the points – they aren’t the transformed data, but rather are “working values” for the response variable from the last iteration of model fitting, which glm() uses behind the scenes to fit the model on the transformed scale.)
+```{r}
+visreg(mod2)
+```
+
+5. Visualize the model fit on the original data scale. Note that is it curvilinear.
+```{r}
+visreg(mod2, scale = "response")
+```
+
+6. Extract the estimated regression coefficients from your model object. What is the interpretation of these coefficients? On a piece of paper, write down the complete formula for your fitted model.
+
+_nsatellites = -3.30476 + 0.16405 * width.cm_
+```{r}
+summary(mod2)
+```
+
+7. Calculate the likelihood-based 95% confidence interval for the regression coefficients. The most useful estimate is that for the slope: exp(slope) represents the multiple to the response variable accompanying a 1-unit change in the explanatory variable.
+```{r}
+confint(mod2, level = 0.95)
+
+exp(0.16405) # on average an increase of 1 cm width is accompanied by 1.18 male satellites.
+```
+
+8. Test the null hypothesis of no relationship between number of satellite males and female carapace width. Notice how small the P-value is for the null hypothesis test for the slope. I’m afraid that this is a little optimistic. Why? Read on.
+
+9. When you extracted the regression coefficients from your model object, you probably saw the following line of output: “(Dispersion parameter for poisson family taken to be 1)”. What are we really assuming* here?
+10. If you did not want to rely on this assumption (or you wanted to estimate the dispersion parameter), what option is available to you? Refit a generalized linear model without making the assumption that the dispersion parameter is 1.
+
+11. Extract and examine the coefficients of the new glm model object. Examine the estimated dispersion parameter. Is it close to 1? On this basis, which of the two glm fits to the same data would you regard as the more reliable?
+
+12. How do the regression coefficients of this new fit compare with the estimates from the earlier model fit? How do the standard errors compare? Why are they larger** this time?
+
+13. Visualize the new model fit and compare with the plot of the earlier fit. What difference do you notice?
+
+14. Redo the test of significance for the slope of the relationship between number of satellite mates and female carapace width. Remember to use the F test rather than the likelihood ratio test in the anova command. How do the results compare with those from the previous fit?
+* By using the Poisson distribution to model the residuals, we assume that for any given value of the x-variable, the variance of y is equal to the mean of y. Typically, however, in real data the variance of y is greater than the mean of y at any given x (“overdispersion”). One reason is that a variety of factors cause variation in y, and most aren’t included in the model being fitted.
+
+** Because the model is now taking account of the actual amount of variance in y for each x, which is larger than that assumed by the first model you fitted.
+
+Prion resistance not futile
+This last exercise is to demonstrate the use of glm() to model frequencies of different combinations of two (or more) variables in a contingency table. The presence of an interaction between the variables indicates that the relative frequencies of different categories for one variable differ between categories of the other variable. In other words, the two variables are then not independent.
+
+Kuru is a prion disease (similar to Creutzfeldt–Jakob disease) of the Fore people of highland New Guinea. It was once transmitted by the consumption of deceased relatives at mortuary feasts, a ritual that was ended by about 1960. Using archived tissue samples, Mead et al. (2009, New England Journal of Medicice 361: 2056-2065) investigated genetic variants that might confer resistance to kuru. The data are genotypes at codon 129 of the prion protein gene of young and elderly individuals all having the disease. Since the elderly individuals have survived long exposure to kuru, unusually common genotypes in this group might indicate resistant genotypes. The data are here.
+
+
+
+Read and examine the data
+Read the data from the file. View the first few lines of data to make sure it was read correctly.
+Create a contingency table comparing the frequency of the three genotypes at codon 129 of the prion protein gene of young and elderly individuals (all having the disease). Notice any pattern? By comparing the frequencies between young people and older people, which genotype is likely to be more resistant to the disease?
+(Optional) Create a grouped bar graph illustrating the relative frequencies of the three genotypes between afflicted individuals in the two age categories.
+
+
+Fit a generalized linear model
+To model the frequencies you will first need to convert the contingency table to a “flat” frequency table using data.frame().
+FIt a generalized linear model to the frequency table. To begin, fit the additive model, i.e., use a model formula without an interaction between the two variables genotype and age.
+Visualize the fit of the additive model to the frequency data. Notice how the additive model is constrained from fitting the exact frequencies in each category.
+Repeat the model fitting but include the interaction term as well. Visualize the fit of the model to the data. Notice how this “full” model really is full – it fits the frequencies exactly.
+Test whether the relative frequencies of the three genotypes differs between the two age groups (i.e., whether there is a significant interaction between age and genotype).

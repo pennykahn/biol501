@@ -1,0 +1,147 @@
+---
+title: "Assignment 2: Analyze a Linear Model"
+author: "Penny Kahn"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    theme: yeti
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(DT))
+```
+
+# Introduction
+
+Jacobeen, S., Pentz, J.T., Graba, E.C., Brandys, C.G., Ratcliff, W.C., Yunker, P.J. 2018. Cellular packing, mechanical stress and the evolution of multicellularity. *Nature Physics* 14, 286–290.
+
+[Link to paper on nature.com](https://www.nature.com/articles/s41567-017-0002-y)
+
+The paper I have chosen is from a group at the Georgia Institute of Technology that studies the evolution of multicellularity and multicellular complexity using a yeast model. They have experimentally evolved several independent populations of multicellular yeast from a commonly used unicellular lab strain. Their experimental evolution method involves selecting individual units (i.e. clusters) that settle out of liquid media most rapidly, and consequently only the largest clusters survive each selection event. Over many generations of this selection regime, cluster size has increased despite physical challenges associated with cellular packing and mechanical stress.
+
+The study I have chosen invesitgates the factors that enable this system to overcome physical challenges which constrain cluster size. For example, as the cluster is growing, cells in the center are dividing and become overcrowded. The cells push against each other and cause the cluster to fracture. The authors have found that one mechanism for growing larger clusters by avoiding fracture is to increase cell size. Cluster size scales with cell size, so there are fewer cell divisions needed to achieve a large size. Another way to pack tightly is to increase cell aspect ratio - hot dog shapes are easier to pack tightly than spheres. Making cells larger and more elongate allow clusters to grow larger without experiencing as much internal physical stress.
+
+![](https://pennykahn.github.io/biol501/cluster.png)
+
+# Describe the Data
+
+The data I will use are from a plot showing the relationship between number of cells and cluster size at two timepoints in the evolution experiment. The response variable is number of cells in a cluster, and the explanatory variables are cluster size (continuous) and timepoint (categorical). Each individual cluster has a measurement for size (radius, μm) and number of cells, as well as a timepoint (either Week 1 or Week 8). All individuals were measured from the same population which experienced daily selection events for large size. Let's look at the data to get an idea of the patterns.
+
+First I'll read the data into a table called "snowflake". Lets take a look at it using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
+```{r}
+snowflake <- read_csv("mod_attempt2.csv")
+datatable(snowflake)
+```
+
+We'll visualize it further with a scatter plot. The different colors indicate timepoint.
+```{r fig.width = 6, fig.height = 4}
+plot <- snowflake %>%
+  ggplot(aes(x = radius, y = no_cells)) +
+  geom_point(aes(color = week)) +
+  labs(x = "Cluster radius (μm)", y = "Number of cells") +
+  theme_classic() + 
+  theme(legend.title = element_blank())
+
+plot
+```
+
+### Patterns
+The first (perhaps obvious) pattern is that as cluster size increases, so does the number of cells within a cluster. This makes sense because cell division (and failure to separate mother and daughter) is how an individual grows. A more meaningful pattern we can see from this graph is that the distribution has shifted toward a larger cluster size from week 1 to week 8, indicating that cluster size has in fact increased over the course of the evolution experiment. Most importantly for the context of the study, we see that for each cluster radius, the week 8 individuals have a lower number of cells than the week 1 individals. Remember, this is because the cells themselves are increasing in size and aspect ratio.
+
+### Parameters
+A linear model fit to these data will provide us with estimates for slope and intercepts of fit lines depending on what the settings of the model are. 
+                               
+- For a model with one explanatory and one response variable, we will receive an intercept and slope.
+- For a model with two explanatory variables we will receive one intercept, one slope and a value for the difference in intercept of the other line. So we will get two parallel lines with different intercepts.
+- For a model with an interaction between two explanatory variables, we will receive an intercept and slope for one line, and values for the differences in the intercept and slope of the other line. So we will get two lines with different slopes and intercepts.
+- If we ask for a model with a second order polynomial (y = b0 + b1X1 + b2X2^2), we will recieve an estimate for the intercept (b0), the coefficient for the first term (b1), and the coefficient for the second term (b2). If we include an interaction with another explanatory variable, we will also receive all the estimates for differences in those three parameters for the second line.
+
+###Hypotheses
+1. There is a positive linear relationship between size and cell number in general.
+2. The distributions at each timepoint are actually different from one another (there should be a different intercept for each timepoint). 
+3. There is an interaction between timepoint and cluster size (there should be a different slope and intercept for each timepoint). 
+4. Adding a second order polynomial factor will fit the data better than a straight line.
+
+# Fit a Linear Model
+>Fit a linear model to the data in R. Explain in words the model you fit.
+
+>Interpret the output. To assess biological significance, explain the parameter estimates (magnitudes). 
+>What do they mean and what are your conclusions based on these parameter estimates. To assess statistical significance, explain the null hypotheses and interpret the test results.
+
+>Visualize the model fit to the data. Explain what the graph is showing.
+
+### The simplest linear model
+```{r}
+mod_1 <- lm(no_cells ~ radius, data = snowflake)
+summary(mod_1)
+```
+```{r}
+anova(mod_1)
+```
+```{r}
+plot + 
+  geom_abline(intercept = -123.364, slope = 9.599)
+```
+
+### Adding timepoint variable
+```{r}
+mod_2 <- lm(no_cells ~ radius + week, data = snowflake)
+summary(mod_2)
+```
+```{r}
+anova(mod_2, mod_1)
+```
+```{r}
+plot +
+  geom_abline(intercept = -192.6535, slope = 14.2644) +
+  geom_abline(intercept = (-192.6535 - 154.7785), slope = 14.2644)
+```
+
+
+### Interaction component
+```{r}
+mod_3 <- lm(no_cells ~ radius * week, data = snowflake)
+summary(mod_3)
+```
+```{r}
+anova(mod_3, mod_2)
+```
+```{r}
+plot + 
+  geom_abline(intercept = -314.641, slope = 18.322) +
+  geom_abline(intercept = (-314.641 + 80.791), slope = (18.322 - 7.235))
+```
+
+### Polynomial factor
+```{r}
+mod_4 <- lm(no_cells ~ poly(radius, 2, raw = TRUE) * week, data = snowflake)
+summary(mod_4)
+```
+```{r}
+anova(mod_4, mod_3)
+```
+```{r}
+poly1 <- function(x) 197.9767 - 21.4283 * x + 0.7246 * x^2
+poly2 <- function(x) (197.9767 - 210.8983) + (-21.4283 + 19.6616) * x + (0.7246 - 0.5435) * x^2
+```
+```{r warning=FALSE}
+plot +
+  stat_function(method = lm, fun = poly1) + 
+  stat_function(method = lm, fun = poly2) +
+  ylim(0, 500)
+```
+
+# Conclusions
+>Address how well the statistical assumptions of your analysis were met. How did you handle violations?
+
+>State the overall conclusions reached from your analyses of biological and statistical significance.
+
+>Include your clean R code in an appendix. 
+
+
+

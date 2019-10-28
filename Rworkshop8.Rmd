@@ -1,0 +1,225 @@
+---
+title: "Rworkshop8"
+author: "Penny Kahn"
+date: '2019-10-24'
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(MuMIn)
+library(visreg)
+```
+
+# Model selection
+Selecting among candidate models requires a criterion for evaluating and comparing models, and a strategy for searching the possibilities. In this workshop we will explore some of the tools available in R for model selection. You might need to download and install the MuMIn package from the CRAN website to carry out all the exercises.
+
+## Scaling of BMR in mammals
+Savage et al. (2004, Functional Ecology 18: 257-282) used data to reevaluate competing claims for the value of the allometric scaling parameter β relating whole-organism metabolic rate to body mass in endotherms:
+
+BMR=αMβ
+
+In this formula BMR is basal metabolic rate, M is body mass, and α is a constant. On a log scale this can be written as
+
+log(BMR)=log(α)+βlog(M)
+
+where β is now a slope parameter of an ordinary linear regression – a linear model. Theory based on optimization of hydrodynamic flows through the circulation system predicts that the exponent should be β=3/4, whereas we would expect β=2/3 if metabolic rate scales with heat dissipation and therefore body surface area. These alternative scaling relationships represent distinct biophysical hypotheses. We will use them as candidate models and apply model selection procedures to compare their fits to data.
+
+Savage et al. compiled data from 626 species of mammals. To simplify, and reduce possible effects of non-independence of species data points, they took the average of log(BMR) among species in small intervals of log(M).
+
+The resulting values of basal metabolic rate and mass can be downloaded here. Body mass is in grams, whereas basal metabolic rate is in watts.
+
+```{r}
+bmr <- read_csv("bmr.csv")
+```
+
+1. Plot the data. Is the relationship between mass and metabolic rate linear on a log scale?
+```{r}
+plot <- bmr %>% 
+  ggplot(aes(x = log(mass.g), y = log(bmr.w)))+
+  geom_point()
+
+plot
+```
+
+2. Fit a linear model to the log-transformed data (original data are not on the log scale). What is the estimate of slope?
+```{r}
+mod <- lm(log(bmr.w) ~ log(mass.g), data = bmr)
+summary(mod)
+```
+
+3. Produce a 95% confidence interval for the slope. Does the interval include either of the candidate values for the scaling parameter β?
+_It doesn't include the candidate of 2/3._
+```{r}
+confint(mod, level = 0.95)
+```
+
+4. Add the best-fit regression line to the plot in (1).
+```{r}
+plot + 
+  geom_abline(intercept = -4.00329, slope = 0.73654)
+```
+
+5. Now compare the fits of the two candidate models to the data. To accomplish this you need to force a regression line having a specified slope through the (log-transformed) data. See the end of the part on simple linear regression in the “Fit a linear model” section of the “Fit model” tab at the R tips page.
+```{r}
+mod1 <- lm(log(bmr.w) ~ 1 + offset(3/4*log(mass.g)), data = bmr)
+summary(mod1)
+mod2 <- lm(log(bmr.w) ~ 1 + offset(2/3*log(mass.g)), data = bmr)
+summary(mod2)
+```
+
+6. Replot the data indicating the relationship between log(M) and log(BMR). Add to this plot the best-fit line having slope 3/4. Repeat this for the slope 2/3. By eye, which line appears to fit the data best?
+
+_It looks like the slope of 3/4 fits the data better_
+```{r}
+plot +
+  geom_abline(intercept = -4.09693, slope = 3/4, color = "blue")
+
+plot + 
+  geom_abline(intercept = -3.51704, slope = 2/3, color = "red")
+```
+
+7. Compare the residual sum of squares of the two models you fit in (5). Which has the smaller value? Do these values agree with your visual assessment of your plots in (6)?
+
+_The model with a slope of 3/4 has a lower RSS (5.3777 < 8.4886). This agrees with my visual estimation_
+```{r}
+anova(mod1)
+anova(mod2)
+```
+
+8. Calculate the log-likelihood of each model fitted in (5). Which has the higher value?
+
+_The model with a slope of 3/4 has the higher value (because the values are negative, -14.79135 > -26.6593)._
+```{r}
+logLik(mod1)
+logLik(mod2)
+```
+
+9. Calculate AIC for the two models, and the AIC difference*. By this criterion, which model is best? How big is the AIC difference?
+
+_By this criterion, the model with a slope of 3/4 is best because we want to minimize AIC. The difference is -23.73591_
+```{r}
+(AIC1 <- AIC(mod1))
+(AIC2 <- AIC(mod2))
+(delta <- AIC1 - AIC2)
+```
+
+10. In general terms, what does AIC score attempt to measure?
+_AIC attempts to find the best model by dealing with the tradeoff between model fit and model simplicity. It rewards goodness of fit, and "punishes" complexity._
+
+11. Calculate the Akaike weights of the two models**. Which has the higher weight of evidence in its favor? These weights would be used in Multimodel Inference (such as model averaging), which we won’t go into in this course. The weights should sum to 1. (They are sometimes interpreted as the posterior probability that the given model is the “best” model, assuming that the “best” model is one of the set of models being compared, but this interpretation makes assumptions that we won’t go into right now.)
+
+_The Akaike weights for the two models are:_
+_3/4 slope model weight: 9.999930e-01_
+_2/3 slope model weight: 7.011478e-06_
+
+_The weight for the model with a slope of 3/4 is larger._
+```{r}
+myAIC <- c(33.58269, 57.3186)
+
+delta <- myAIC - min(myAIC)
+L <- exp(-0.5 * delta)
+(w <- L/sum(L))
+```
+
+12. Summarize the overall findings. Do both models have some support, according to standard criteria, or does one of the two models have essentially no support?
+
+_Both models have some support._
+
+13. Why is it not possible to compare the two models using a conventional log-likelihood ratio test***?
+
+_The models are not nested._
+
+# Bird abundance in forest fragments
+In the current example we are going data dredging, unlike the previous example, with all its attendant risks. We have no candidate models. Let’s just try all possibilities and see what turns up. The data include a set of possible explanatory variables and we want to known which model, of all possible models, is the “best”. Sensibly, we also wish to identify those models that are near-best and should be kept under consideration (e.g., for use in planning, or subsequent multimodel inference).
+
+The response variable is the abundance of forest birds in 56 forest fragment in southeastern Australia by Loyn (1987, cited in Quinn and Keough [2002] and analyzed in their Box 6.2). Abundance is measured as the number of birds encountered in a timed survey (units aren’t explained). Six predictor variables were measured in each fragment:
+area: fragment area (ha)
+dist: distance to the nearest other fragment (km)
+ldist: distance to the nearest larger fragment (km)
+graze: grazing pressure (1 to 5, indicating light to heavy)
+alt: altitude (m)
+yr.isol: number of years since fragmentation.
+
+```{r}
+bird <- read_csv("birdabund.csv")
+bird <- bird %>% 
+  mutate(log_area = log(area)) %>% 
+  mutate(log_dist = log(dist)) %>% 
+  mutate(log_ldist = log(ldist)) %>% 
+  select(abund, log_area, yr.isol, log_dist, log_ldist, graze, alt)
+
+bird
+```
+
+1. Using histograms, scatter plots, or the pairs command, explore the frequency distributions of the variables. Several of the variables are highly skewed, which will lead to outliers having excessive leverage. Transform the highly skewed variables to solve this problem. (I log-transformed area, dist and ldist. The results are not perfect.)
+```{r}
+bird %>% 
+  ggplot(aes(x = yr.isol, y = abund)) +
+  geom_col()
+
+bird %>% 
+  ggplot(aes(x = log_area, y = abund)) +
+  geom_col()
+
+bird %>% 
+  ggplot(aes(x = log_dist, y = abund)) +
+  geom_col()
+
+bird %>% 
+  ggplot(aes(x = log_ldist, y = abund)) +
+  geom_col()
+
+bird %>% 
+  ggplot(aes(x = graze, y = abund)) +
+  geom_col()
+
+bird %>% 
+  ggplot(aes(x = alt, y = abund)) +
+  geom_col()
+```
+
+2. Use the cor command to estimate the correlation between pairs of explanatory variables. The results will be easier to read if you round to just a couple of decimals. Which are the most highly correlated variables?
+```{r}
+cor(bird$yr.isol, bird$alt)
+cor(bird$log_area, bird$log_dist)
+cor(bird$log_ldist, bird$alt)
+cor(bird$log_area, bird$graze)
+```
+
+3. Using the model selection tool dredge() in the MuMIn package, determine which linear model best predicts bird abundance (use AIC as the criterion). dredge() carries out an automated model search using subsets of the ‘global’ model provided. Ignore interactions for this exercise. (You will need to install the MuMIn package if you haven’t yet done so.)
+```{r}
+full <- lm(abund ~., data = bird, na.action = na.fail)
+dredge_bird <- dredge(full, rank = "AIC")
+
+dredge_bird
+```
+
+4. How many variables are included in the best model*?
+_3 explanatory variables: grz, logarea, and yr.isol_
+
+5. How many models in total have an AIC difference less than or equal to 7?
+```{r}
+print(dredge_bird[dredge_bird$delta < 7])
+```
+
+6. Calculate the Akaike weights of all the models retained. How much weight is given to the best model**? Are there common features shared among the models having the highest weights?
+```{r}
+Weights(dredge_bird)
+```
+
+7. How many models are in the “confidence set” whose cumulative weights reach 0.95***?
+
+8. Use a linear model to fit the “best” model to the data. Produce a summary of the results. Use visreg to visualize the conditional relationship between bird abundance and each of the three variables in the “best” model one at a time. Visually, which variable seems to have the strongest relationship with bird abundance in the model?
+
+_Area_
+```{r}
+best_mod <- lm(get.models(dredge_bird, subset = 1)[[1]], data = bird)
+summary(best_mod)
+```
+```{r}
+visreg(best_mod)
+```
+
+
+9. Generate an ANOVA table for the best model. Use Type 2 or Type 3 sums of squares so that the order of entry of the main effects in the formula don’t affect the tests (there are no interactions). Why should we view the resulting P-values with a great deal of skepticism****?
+10. Notice that in your ANOVA table, not all terms in the best model are stastically significant at P<0.05 and so would not be retained in a stepwise multiple regression process. Are you OK with this? Good.

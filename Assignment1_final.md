@@ -7,6 +7,7 @@ output:
 ---
 
 
+
 I have chosen a graph from a paper I found on Patrick Keeling's website. There are over 70 authors, so I won't provide a complete citation, but here is an abbreviated one:
 
 Curtis BA, Tanifuji G, Burki F, Gruber A, Irimia M, et al. (2012) Algal genomes reveal evolutionary mosaicism and the fate of nucleomorphs. _Nature_ 492: 59–65.
@@ -61,8 +62,9 @@ pie %>%
   datatable()
 ```
 
-<!--html_preserve--><div id="htmlwidget-053a6c442d326f3d028c" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-053a6c442d326f3d028c">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+<!--html_preserve--><div id="htmlwidget-d1a29577cd078f73fa89" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-d1a29577cd078f73fa89">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+
 
 ## Analyze the good graph
 Here is the code for producing my bar graph:

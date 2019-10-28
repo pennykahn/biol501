@@ -5,13 +5,7 @@ output:
   html_document:
     keep_md: TRUE
 ---
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-```{r global_options, include=FALSE}
-knitr::opts_chunk$set(fig.path='Figs/',
-                      warning=FALSE, message=FALSE)
-```
+
 
 I have chosen a graph from a paper I found on Patrick Keeling's website. There are over 70 authors, so I won't provide a complete citation, but here is an abbreviated one:
 
@@ -42,7 +36,8 @@ The purpose of my figure of interest (3b) was to show the functional locations o
 The authors chose to use 3D pie graphs to show this data. In my opinion pie graphs are an ineffective way to show relative abundances because the human brain is not as good at understanding triangular area as it is with relative lengths of bars. Additionaly, they have added an unnecessary third dimension to this graph, confusing the eye even more. It's very difficult to compare the distributions of the two graphs because they just look too similar at a glance. Moreover, the graph only presents percents without showing the raw counts. I think a well designed bar graph would be more effective at presenting this data, so that is the direction I have chosen to go.
 
 ##Preparing the data
-```{r}
+
+```r
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(wesanderson))
@@ -50,13 +45,15 @@ suppressPackageStartupMessages(library(ggthemes))
 suppressPackageStartupMessages(library(grid))
 suppressPackageStartupMessages(library(DT))
 ```
-```{r}
+
+```r
 pie<-read.csv("501_graph_attempt2.csv")
 ```
 
 Here is a table with the raw counts of proteins by location for each species. I have also added a column for location proportions within each species:
 
-```{r}
+
+```r
 pie %>% 
   select(species, location, number) %>% 
   group_by(species) %>% 
@@ -64,10 +61,13 @@ pie %>%
   datatable()
 ```
 
+<!--html_preserve--><div id="htmlwidget-20219659f703f923fe28" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-20219659f703f923fe28">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Bigelowiella natans","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta","Guillardia theta"],["Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi","Cytosolic","Plastid","PPC or NM","Mitochondrion","ER or Golgi"],[268,56,7,11,11,335,117,26,15,15],[0.759206798866855,0.158640226628895,0.0198300283286119,0.0311614730878187,0.0311614730878187,0.659448818897638,0.230314960629921,0.0511811023622047,0.0295275590551181,0.0295275590551181]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>location<\/th>\n      <th>number<\/th>\n      <th>prop<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[3,4]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
 
 ## Analyze the good graph
 Here is the code for producing my bar graph:
-```{r}
+
+```r
 pie %>%
   select(species, location, number) %>%
   group_by(species) %>%
@@ -87,5 +87,7 @@ pie %>%
               label = "Total alga-derived proteins:\n508",
               family = "serif")
 ```
+
+![](Figs/unnamed-chunk-4-1.png)<!-- -->
 
 Seeing the distributions side by side in this way allows for much easier comparisons of proportions between the two species. A pattern is still evident that a cytosolic destination is by far the most common, but you can now also see the relative amounts of the other locations. I also present the raw counts above the bars, which makes the amount of data more transparent than percents alone. My color scheme is also easier for people with red-green and monochromacy color-blindness to detect. Finally there is less perceptual distortion because I have not added extra unnecessary dimensions to the graph.
