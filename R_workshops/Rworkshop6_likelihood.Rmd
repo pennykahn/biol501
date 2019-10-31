@@ -167,19 +167,51 @@ where df is the degrees of freedom, calculated as the difference between the two
 ```{r}
 1 - pchisq(G, 1)
 ```
-Counting elephants
+
+# Counting elephants
 Counting elephants is more challenging than you might think, at least when they live in dense forest and feed at night. Eggert et al. (2003. Molecular Ecology 12: 1389-1402) used mark-recapture methods to estimate the total number of forest elephants inhabiting Kakum National Park in Ghana without having to see a single one. They spent about two weeks in the park collecting elephant dung, from which they extracted elephant DNA. Using five genetic markers, they generated a unique DNA fingerprint for every elephant encountered in this way. Over the first seven days of collecting they identified 27 elephant individuals. Refer to these 27 elephants as marked. Over the next eight days they sampled 74 individuals, of which 15 had been previously marked. Refer to these 15 elephants as recaptured. We would like to use these numbers to estimate the total number of elephants in the park.
 
 If we can make the following assumptions,
 
-There were no births, deaths, immigrants, or emigrants while the study was being carried out, and
-The dung of every elephant, marked or unmarked, regardless of its output, had an equal chance of being sampled, and selection of each individual was independent of the others.
+- There were no births, deaths, immigrants, or emigrants while the study was being carried out, and
+- The dung of every elephant, marked or unmarked, regardless of its output, had an equal chance of being sampled, and selection of each individual was independent of the others.
+
 then the number of recaptured (i.e., previously marked) individuals X in the second sample should have a hypergeometric distribution with parameters k (the size of the second sample of individuals), m (total number of marked individuals in the population), and n (total number of unmarked individuals in the population).
 
-Using the appropriate command in R for the hypergeometric distribution, calculate the maximum likelihood estimate for the total number of elephants in the park. Note that the total number is n + m, where n is the unknown parameter to be estimated. Note also that only integer values for n are allowed, and that n cannot be smaller than k - X, the observed number of unmarked individuals in the second sample.*
-Calculate a likelihood-based 95% confidence interval for the total number of elephants.**
+1. Using the appropriate command in R for the hypergeometric distribution, calculate the maximum likelihood estimate for the total number of elephants in the park. Note that the total number is n + m, where n is the unknown parameter to be estimated. Note also that only integer values for n are allowed, and that n cannot be smaller than k - X, the observed number of unmarked individuals in the second sample.*
+>dhyper(X, m, n, k)
+
+```{r}
+m <- 27
+k <- 74
+X <- 15
+
+N <- 86:300
+#N must be at least 86: 74 - 15 + 27 = 86
+
+loglike <- dhyper(X, m, n = N-27, k, log = TRUE)
+
+plot(loglike ~ N, type="l")
+```
+```{r}
+max(loglike)
+N[loglike == max(loglike)]
+
+Nlist <- seq(86, 300, by = 1)
+df3 <- data_frame(Nlist, loglike)
+
+df3 # find the loglike for N at max loglike
+
+-1.763941 - 1.92 # =-3.682941 now find the N with loglike equal to that
+
+# 104 to 193
+```
+
+
+2. Calculate a likelihood-based 95% confidence interval for the total number of elephants.**
 * 133 ** 104 < N < 193
-Voyaging voles
+
+# Voyaging voles
 The movement or dispersal distance of organisms is often modeled using the geometric distribution, assuming steps are discrete rather than continuous. For example, M. Sandell, J. Agrell, S. Erlinge, and J. Nelson (1991. Oecologia 86: 153-158) measured the distance separating the locations where individual voles, Microtus agrestis, were first trapped and the locations they were caught in a subsequent trapping period, in units of the number of home ranges. The data for 145 male and female voles are here. The variable “dispersal” indicates the distance moved (number of home ranges) from the location of first capture. If the geometric model is adequate, then Pr[X = 0 home ranges moved] = p Pr[X = 1 home ranges moved] = (1-p)p Pr[X = 2 home ranges moved] = (1-p)2p and so on. p is the probability of success (capture) at each distance from the location of the first capture.
 
 Tabulate the number of home ranges moved by voles in this study.

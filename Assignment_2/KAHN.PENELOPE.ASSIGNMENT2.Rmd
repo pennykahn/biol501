@@ -17,6 +17,7 @@ suppressPackageStartupMessages(library(DT))
 suppressPackageStartupMessages(library(here))
 suppressPackageStartupMessages(library(MuMIn))
 suppressPackageStartupMessages(library(cowplot))
+suppressPackageStartupMessages(library(visreg))
 ```
 
 # Introduction
@@ -63,7 +64,7 @@ The first (perhaps obvious) pattern is that as cluster size increases, so does t
 ### Parameters
 A linear model fit to these data will provide us with estimates for slope and intercepts of lines that fit the data depending on the settings of the model. 
                                
-- For a model with one explanatory and one response variable, we will receive an intercept and slope.
+- For a model with one explanatory and one response variable, we will receive an intercept and slope..
 - For a model with two explanatory variables we will receive an intercept and a slope for one line, and a value for the difference in intercept of another line. So we will get two parallel lines with different intercepts.
 - For a model with an interaction between two explanatory variables, we will receive an intercept and slope for one line, and values for the differences in the intercept and slope of the other line. So we will get two lines with different slopes and intercepts.
 - If we ask for a model with a second degree polynomial (y = b0 + b1X + b2X^2), we will receive an estimate for the intercept (b0), the coefficient for the first term (b1), and the coefficient for the second term (b2). If we include an interaction with another explanatory variable, we will also receive all the estimates for differences in those three parameters for the second line.
@@ -121,7 +122,7 @@ summary(mod_2)
 
 Now we have three coefficient estimates. In the order given in the output, we have the intercept for week 1, the slope for both weeks, and a difference of intercept for week 8. We can use the values from this output to make two regression equations - one for each week. The intercepts for the lines are -192.6535 for week 1 and (-192.6535 - 154.7785) or -347.432 for week 8. This estimates that for a given cluster radius there will be ~155 cells fewer in week 8 than week 1. 
 
-We see that the slope has increased from the first model (14.2644 > 9.599). Mod2 predicts that for a 1 μm increase in cluster radius, there is a cell number increase of 9.599. This increase in slope is because the relationship in the first model was being obscured by the difference in distribution along the x-axis. Also, the adjusted r-squared value has increased from the first to the second model (0.8437 > 0.3832) indicating a tighter fit of the data to the lines.
+We see that the slope has increased from the first model (14.2644 > 9.599). Mod2 predicts that for a 1 μm increase in cluster radius, there is a cell number increase of 14.2644. This increase in slope is because the relationship in the first model was being obscured by the difference in distribution along the x-axis. Also, the adjusted r-squared value has increased from the first to the second model (0.8437 > 0.3832) indicating a tighter fit of the data to the lines.
 
 ---
 
@@ -236,6 +237,14 @@ plot_grid(plot1, plot2, plot3, plot4, labels = c("mod1", "mod2", "mod3", "mod4")
 ```
 
 I chose to use a regular linear model for this data. A generalized linear model would not apply because these are not count or binary data. There are also no random effects because each data point represents an individual from the same population, and different individuals are measured at each time point. All the variables are accounted for, and none of them produce a random effect. 
+
+Assumptions we make with a linear model are that we have equal variance of residuals across the distribution, that the data are normally distributed, and that the variables are independent. 
+
+We can use the plot function to view if the data meets these assumptions. The first and third graphs of the output of the plot() function for mod4 show that the residuals have equal variance because the points are evenly distributed along the red line. The second graph of the output shows that the data are normally distributed because the points fall along the 1:1 line of the Q-Q plot. The 4th graph shows the variables are independent because all the points fall within 0.5 Cook's distance.
+```{r}
+plot(mod_4)
+```
+
 
 ---
 
