@@ -9,10 +9,9 @@ output:
     theme: yeti
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-```{r}
+
+
+```r
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(DT))
 suppressPackageStartupMessages(library(here))
@@ -37,17 +36,32 @@ The study I have chosen invesitgates the factors that enable this system to over
 The data I will use are from a plot showing the relationship between number of cells and cluster size at two time points in the evolution experiment. The response variable is number of cells in a cluster (continuous, fixed), and the explanatory variables are cluster size (continuous, fixed) and time point (categorical, fixed). Each individual cluster has a measurement for size (radius, μm) and number of cells, as well as a time point (either Week 1 or Week 8). All individuals were measured from the same population which experienced daily selection events for large size. Let's look at the data to get an idea of the patterns.
 
 First I'll read the data into a table called "snowflake" using the here() function from the "here" package. This allows the code to work for someone who has cloned the whole R project to a directory of their choosing anywhere on their local system. 
-```{r}
+
+```r
 snowflake <- read_csv(here::here("Assignment_2", "mod_attempt2.csv"))
 ```
 
+```
+## Parsed with column specification:
+## cols(
+##   radius = col_double(),
+##   no_cells = col_double(),
+##   week = col_character()
+## )
+```
+
 Let's take a look at the data using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
-```{r}
+
+```r
 datatable(snowflake)
 ```
 
+<!--html_preserve--><div id="htmlwidget-e8feb6e63613b1bf9fe8" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e8feb6e63613b1bf9fe8">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"],[13.71572611,21.69013628,22.48987348,22.58168368,25.35716802,26.38453564,27.31516746,27.9658254,29.34870614,29.80074802,32.10927781,33.38744107,34.04359405,34.07630357,34.08564338,34.75609325,35.2787706,35.28779215,35.89593876,37.59382788,38.24855863,20.70660321,28.45104639,28.92812975,29.52711937,29.76868696,30.177551,31.30616776,31.41274657,32.14890668,33.54912454,33.78548878,34.07630357,34.16958681,34.45716,34.96610177,37.04367583,39.09227243,40.35434769,40.72729818,40.83267299,41.98192277,42.2426943,42.42690663,43.37660357,46.66090035,47.15288491],[27,69,102,88,124,175,164,147,201,195,251,255,338,302,261,295,418,300,338,434,477,32,85,87,77,68,115,138,119,89,145,119,148,136,134,168,154,211,211,191,221,257,242,230,250,250,346],["Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 1","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8","Week 8"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>radius<\/th>\n      <th>no_cells<\/th>\n      <th>week<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[1,2]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+
 We'll visualize it further with a scatter plot. The different colors indicate time point.
-```{r fig.width = 6, fig.height = 4}
+
+```r
 plot <- snowflake %>%
   ggplot(aes(x = radius, y = no_cells)) +
   geom_point(aes(color = week)) +
@@ -57,6 +71,8 @@ plot <- snowflake %>%
 
 plot
 ```
+
+![](Assignment2_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 ### Patterns
 The first (perhaps obvious) pattern is that as cluster size increases, so does the number of cells within a cluster. This makes sense because cell division (and failure to separate mother and daughter) is how an individual grows. A more meaningful pattern we can see from this graph is that the distribution has shifted toward a larger cluster size from week 1 to week 8, indicating that cluster size has in fact increased over the course of the evolution experiment. Most importantly for the context of the study, we see that for each cluster radius, the week 8 individuals have a lower number of cells than the week 1 individuals. Remember, this is because the cells themselves are increasing in size and aspect ratio.
@@ -81,9 +97,31 @@ I don't think this is necessary for the assignment, but I'm going to fit a few m
 ## The simplest linear model
 
 This first model will be the simplest. It will look at the overall relationship between cluster size (explanatory) and number of cells in a cluster (response). The output we get from this model will give us estimates for slope and intercept of one line (y = b0 + b1*X) that fits the entire dataset.
-```{r}
+
+```r
 mod_1 <- lm(no_cells ~ radius, data = snowflake)
 summary(mod_1)
+```
+
+```
+## 
+## Call:
+## lm(formula = no_cells ~ radius, data = snowflake)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -96.25 -57.46 -39.16  43.86 233.20 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept) -123.364     59.832  -2.062    0.045 *  
+## radius         9.599      1.765   5.439 2.11e-06 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 82.55 on 45 degrees of freedom
+## Multiple R-squared:  0.3966,	Adjusted R-squared:  0.3832 
+## F-statistic: 29.58 on 1 and 45 DF,  p-value: 2.106e-06
 ```
 
 The (Intercept) estimate gives the intercept of the line, but it's not very biologically relevant as it is not possible to have a cluster size of 0 μm. In fact a single yeast cell has a radius of about 2.5 to 5 μm. This value determines the line's position on the y-axis. The model picks a position that will minimize residuals. In this case, for the purpose of the model, when cluster radius is 0 the number of cells is -123.364.
@@ -93,8 +131,20 @@ The "radius" estimate gives us the slope of the line. In this simplest model, wi
 ---
 
 I'll perform an ANOVA to test our first model against a null hypothesis of no relationship.
-```{r}
+
+```r
 anova(mod_1)
+```
+
+```
+## Analysis of Variance Table
+## 
+## Response: no_cells
+##           Df Sum Sq Mean Sq F value    Pr(>F)    
+## radius     1 201593  201593  29.583 2.106e-06 ***
+## Residuals 45 306654    6815                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 
@@ -103,21 +153,47 @@ This ANOVA provides us with a p-value for comparing the model we have created (m
 ---
 
 Now let's visualize the fit of the model to the data. I'll use the geom_abline() function to easily specify intercept and slope, which I have taken from the model output.
-```{r}
+
+```r
 plot1 <- plot + 
   geom_abline(intercept = -123.364, slope = 9.599)
 
 plot1
 ```
 
+![](Assignment2_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
 This graph simply shows a positive relationship. Number of cells in a cluster increases with cluster radius. We can see the line doesn't fit the data perfectly. It mostly goes down the middle of two groups: samples from week 1 and week 8. I think it's easy to see that there should be separate lines for each time point.
 
 ## Adding time point variable
 
 Now I'll add in the categorical explanatory variable of time point. We should still see a positive relationship for both groups within the explanatory variable "week", but they will have different intercepts, and therefore different positions in graphical space.
-```{r}
+
+```r
 mod_2 <- lm(no_cells ~ radius + week, data = snowflake)
 summary(mod_2)
+```
+
+```
+## 
+## Call:
+## lm(formula = no_cells ~ radius + week, data = snowflake)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -68.16 -26.56  -9.20  18.48 124.06 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)    
+## (Intercept) -192.6535    30.7060  -6.274 1.33e-07 ***
+## radius        14.2644     0.9757  14.620  < 2e-16 ***
+## weekWeek 8  -154.7785    13.3895 -11.560 6.36e-15 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 41.55 on 44 degrees of freedom
+## Multiple R-squared:  0.8505,	Adjusted R-squared:  0.8437 
+## F-statistic: 125.2 on 2 and 44 DF,  p-value: < 2.2e-16
 ```
 
 Now we have three coefficient estimates. In the order given in the output, we have the intercept for week 1, the slope for both weeks, and a difference of intercept for week 8. We can use the values from this output to make two regression equations - one for each week. The intercepts for the lines are -192.6535 for week 1 and (-192.6535 - 154.7785) or -347.432 for week 8. This estimates that for a given cluster radius there will be ~155 cells fewer in week 8 than week 1. 
@@ -127,8 +203,21 @@ We see that the slope has increased from the first model (14.2644 > 9.599). Mod2
 ---
 
 I'll test if the second model which includes the explanatory variable of "week" is significantly different from the first using an ANOVA again.
-```{r}
+
+```r
 anova(mod_2, mod_1)
+```
+
+```
+## Analysis of Variance Table
+## 
+## Model 1: no_cells ~ radius + week
+## Model 2: no_cells ~ radius
+##   Res.Df    RSS Df Sum of Sq      F    Pr(>F)    
+## 1     44  75962                                  
+## 2     45 306654 -1   -230692 133.63 6.358e-15 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 This ANOVA is comparing a model that includes time point as an explanatory variable as well as cluster size to the first model which only includes cluster size. Since we have a significant p-value we can conclude that there is a difference in group mean between the two weeks, and the model we choose should reflect that. In other words, using week and cluster size to predict number of cells in a cluster will yield a more accurate prediction than using cluster size alone.
@@ -136,13 +225,16 @@ This ANOVA is comparing a model that includes time point as an explanatory varia
 ---
 
 We'll visualize the model fit to the data using the same method as before. I'm adding the first and third coefficient estimates for for the intercept of the second line.
-```{r}
+
+```r
 plot2 <- plot +
   geom_abline(intercept = -192.6535, slope = 14.2644) +
   geom_abline(intercept = (-192.6535 - 154.7785), slope = 14.2644)
 
 plot2
 ```
+
+![](Assignment2_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 We can still see the positive relationship between cluster size and number of cells, but we can see that over time (from week 1 to week 8) the distribution has shifted right on the x-axis and down on the y-axis, that is, the cluster size has increased overall with a fewer number of cells at each size. 
 
@@ -151,9 +243,33 @@ These lines appear to fit the data better than a single line for both weeks, but
 ## Interaction component
 
 I'll add an interaction between week and radius by putting an asterisk between them instead of a plus sign.
-```{r}
+
+```r
 mod_3 <- lm(no_cells ~ radius * week, data = snowflake)
 summary(mod_3)
+```
+
+```
+## 
+## Call:
+## lm(formula = no_cells ~ radius * week, data = snowflake)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -50.736 -22.746  -5.028   9.483  90.868 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)       -314.641     38.029  -8.274 1.95e-10 ***
+## radius              18.322      1.239  14.787  < 2e-16 ***
+## weekWeek 8          80.791     55.040   1.468    0.149    
+## radius:weekWeek 8   -7.235      1.655  -4.373 7.66e-05 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 34.97 on 43 degrees of freedom
+## Multiple R-squared:  0.8965,	Adjusted R-squared:  0.8893 
+## F-statistic: 124.2 on 3 and 43 DF,  p-value: < 2.2e-16
 ```
 
 In the output of the interaction model we have four coefficient estimates. In order they are: the intercept of the week 1 line, the slope of the week 1 line, the difference in intercept of the week 8 line, and the difference in slope of the week 8 line.
@@ -168,8 +284,21 @@ Again we can see that the R-squared value has increased from mod2 (0.8437) to mo
 
 Now we'll use an ANOVA to test if week and cluster size interact significantly.
 
-```{r}
+
+```r
 anova(mod_3, mod_2)
+```
+
+```
+## Analysis of Variance Table
+## 
+## Model 1: no_cells ~ radius * week
+## Model 2: no_cells ~ radius + week
+##   Res.Df   RSS Df Sum of Sq      F    Pr(>F)    
+## 1     43 52582                                  
+## 2     44 75962 -1    -23380 19.119 7.659e-05 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 This significant p-value indicates that there is an interaction with week and there should be different slopes for each line. The trends for how clusters grow at each time point are significantly different. We can more accurately predict number of cells per cluster by using different slopes and intercepts for each week instead of just having two parallel lines.
@@ -177,7 +306,8 @@ This significant p-value indicates that there is an interaction with week and th
 ---
 
 To add the lines to this plot, I'm using geom_abline() again, but now I also add the difference between slopes to the second line.
-```{r}
+
+```r
 plot3 <- plot + 
   geom_abline(intercept = -314.641, slope = 18.322) +
   geom_abline(intercept = (-314.641 + 80.791), slope = (18.322 - 7.235))
@@ -185,15 +315,50 @@ plot3 <- plot +
 plot3
 ```
 
+![](Assignment2_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
 We can observe the larger slope for week 1 through its steeper incline. More cells are needed to produce the same size increase in week 1 than in week 8. In week 8 cells are larger, so each addition of a cell will provide more volume to the cluster than a tiny week 1 cell will.
 
 ## Polynomial factor
 
 The data don't look very linear because the nature of cluster growth is not linear. With each generation time (i.e. every time a yeast cell divides) every cell within the cluster gets a new daughter (the ones on the inside and the ones on the outside). The larger a cluster grows, the less effect one division cycle has on the size of the overall cluster, which we can see especially well in the week 1 sample. Even as number of cells increases from ~250 to almost 500, there is little increase in cluster size. So I think a model that includes a second degree polynomial will fit the data better than straight lines.
 
-```{r}
+
+```r
 mod_4 <- lm(no_cells ~ poly(radius, 2, raw = TRUE) * week, data = snowflake)
 summary(mod_4)
+```
+
+```
+## 
+## Call:
+## lm(formula = no_cells ~ poly(radius, 2, raw = TRUE) * week, data = snowflake)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -49.01 -15.49   0.25  14.75  74.16 
+## 
+## Coefficients:
+##                                          Estimate Std. Error t value
+## (Intercept)                              197.9767    93.6365   2.114
+## poly(radius, 2, raw = TRUE)1             -21.4283     6.9801  -3.070
+## poly(radius, 2, raw = TRUE)2               0.7246     0.1261   5.746
+## weekWeek 8                              -210.8983   160.9878  -1.310
+## poly(radius, 2, raw = TRUE)1:weekWeek 8   19.6616    10.2200   1.924
+## poly(radius, 2, raw = TRUE)2:weekWeek 8   -0.5435     0.1638  -3.317
+##                                         Pr(>|t|)    
+## (Intercept)                              0.04061 *  
+## poly(radius, 2, raw = TRUE)1             0.00379 ** 
+## poly(radius, 2, raw = TRUE)2            9.95e-07 ***
+## weekWeek 8                               0.19748    
+## poly(radius, 2, raw = TRUE)1:weekWeek 8  0.06134 .  
+## poly(radius, 2, raw = TRUE)2:weekWeek 8  0.00191 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 26.13 on 41 degrees of freedom
+## Multiple R-squared:  0.9449,	Adjusted R-squared:  0.9382 
+## F-statistic: 140.7 on 5 and 41 DF,  p-value: < 2.2e-16
 ```
 
 There's a lot of coefficient estimates in this one. Basically, there's an estimate for b0, b1, and b2 for week 1 as well as the differences in all those coefficients for the week 8 function. And those get plugged into the quadratic function y = b0 + b1X + b2X^2. I was having a hard time interpreting the biological significance of polynomial parameter estimates, but then I found this from Stimson, J.A., Carmines, E.G., Zeller, R.A. 1978. Interpreting Polynomial Regression. *Sociological Methods & Research* 6, 515-524:
@@ -205,8 +370,21 @@ So I'm going to leave it at that. Just as a note, I'll mention that the positive
 ---
 
 Anyway... let's move onto the ANOVA to test if this quadratic function is a better model than straight lines.
-```{r}
+
+```r
 anova(mod_4, mod_3)
+```
+
+```
+## Analysis of Variance Table
+## 
+## Model 1: no_cells ~ poly(radius, 2, raw = TRUE) * week
+## Model 2: no_cells ~ radius * week
+##   Res.Df   RSS Df Sum of Sq      F    Pr(>F)    
+## 1     41 27994                                  
+## 2     43 52582 -2    -24588 18.006 2.441e-06 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 Indeed, the p-value is significant. The polynomial model fits the data data significantly better than one that produces linear equations.
@@ -214,11 +392,13 @@ Indeed, the p-value is significant. The polynomial model fits the data data sign
 ---
 
 Here I'm writing the two functions, one for each week, using the coefficient estimates from the summary of mod4. I'll use those set functions to graph their lines in ggplot. I'm limiting the y-axis to 500 because otherwise it shows the line up to y = 800 even though there are no data associated with that range.
-```{r}
+
+```r
 poly1 <- function(x) 197.9767 - 21.4283 * x + 0.7246 * x^2
 poly2 <- function(x) (197.9767 - 210.8983) + (-21.4283 + 19.6616) * x + (0.7246 - 0.5435) * x^2
 ```
-```{r warning=FALSE}
+
+```r
 plot4 <- plot +
   stat_function(method = lm, fun = poly1) + 
   stat_function(method = lm, fun = poly2) +
@@ -227,14 +407,19 @@ plot4 <- plot +
 plot4
 ```
 
+![](Assignment2_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+
 Visually, these functions seem to fit the data best! As I explained in the intro for this section, when a cluster is very small, the addition of a single cells or a small number of cells can have a big impact on cluster size. But when a cluster is large, new cells are more concentrated in the interior of the cluster, becoming more tightly packed, and not contributing as much to cluster size. Since cells are becoming more elongate over the course of the evolution experiment, they can pack more easily, feel less internal stress, and don't reach a growth block as quickly as the clusters from week 1.
 
 # Conclusions
 
 Let's look at all the models side-by-side for easy comparison. I am doing this with the plot_grid() function from the "cowplot" package.
-```{r warning=FALSE}
+
+```r
 plot_grid(plot1, plot2, plot3, plot4, labels = c("mod1", "mod2", "mod3", "mod4"), hjust = -1.3)
 ```
+
+![](Assignment2_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 I chose to use a regular linear model for this data. A generalized linear model would not apply because these are not count or binary data. There are also no random effects because each data point represents an individual from the same population, and different individuals are measured at each time point. All the variables are accounted for, and none of them produce a random effect. 
 
@@ -247,7 +432,8 @@ Internal mechanical stress is a physical challenge for growing large size in clo
 When we observe the characteristics of clusters from early and later in the evolution experiment we notice several patterns. By week 8 of the experiment clusters have gotten significantly larger, which we proved by showing that mod2 was significantly different from mod1. Additionally, week 8 clusters require fewer cells to grow the same amount as a week 1 cluster because each cell adds significantly more volume. We showed this by testing mod3 against mod 2. Finally, because cells are becoming more elongate over time, the internal stress is reduced and the week 8 clusters can continue to add more cells and grow even larger without being constrained to a certain size like the week 1 clusters.
 
 Here is a graph with the mean number of cells and cluster size marked with a dashed line for each group (time point). This clearly demonstrates that although cluster size is increasing, number of cells per cluster is decreasing, and we can attribute this to the adaptations of larger and more elongate cells.
-```{r}
+
+```r
 week1 <- snowflake %>% 
   filter(week == "Week 1")
 week8 <- snowflake %>% 
@@ -263,15 +449,37 @@ plot +
                    arrow = arrow())
 ```
 
+![](Assignment2_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+
 ---
 
 I made four progressively more complex models, and the last, most complex one turned out to be the best according to the p-values. Higher complexity doesn't always mean a better model according the Akaike Information Criterion, which penalizes model complexity in balance with rewarding good model fit. Just for fun I'll perform some data dredging using the dredge() function from the "MuMIn" package. It will give us the AIC for each possible model within the parameter space I set.
 
-```{r}
+
+```r
 full <- lm(no_cells ~(.)^2, data = snowflake, na.action = na.fail)
 dredge <- dredge(full, rank = "AICc")
+```
 
+```
+## Fixed term is "(Intercept)"
+```
+
+```r
 dredge
+```
+
+```
+## Global model call: lm(formula = no_cells ~ (.)^2, data = snowflake, na.action = na.fail)
+## ---
+## Model selection table 
+##    (Int)    rds wek rds:wek df   logLik  AICc delta weight
+## 8 -314.6 18.320   +       +  5 -231.660 474.8  0.00  0.999
+## 4 -192.7 14.260   +          4 -240.304 489.6 14.78  0.001
+## 2 -123.4  9.599              3 -273.098 552.8 77.97  0.000
+## 3  236.2          +          3 -281.846 570.3 95.47  0.000
+## 1  195.4                     2 -284.972 574.2 99.43  0.000
+## Models ranked by AICc(x)
 ```
 
 In fact, the model with the most estimated terms (df = 5) has the lowest AIC and highest weight. Our analysis is supported!
