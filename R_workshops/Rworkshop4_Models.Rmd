@@ -115,7 +115,7 @@ Our second example fits a linear model with a categorical explanatory variable. 
 ##Read and examine the data
 1. Read the data from the file.
 ```{r}
-knees <- read.csv("knees.csv")
+knees <- read_csv(here::here("example_data","knees.csv"))
 ```
 
 2. View the first few lines of data to make sure it was read correctly.
