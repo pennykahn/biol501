@@ -1,0 +1,87 @@
+---
+title: "test"
+author: "Penny Kahn"
+date: '2019-11-17'
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(factoextra)
+```
+
+```{r}
+print(iris)
+```
+
+```{r}
+iris_active <- iris %>% 
+  select(Sepal.Length:Petal.Width)
+
+iris_pca <- prcomp(iris_active, scale = TRUE)
+fviz_eig(iris_pca)
+```
+```{r}
+groups <- as.factor(iris$Species[1:150])
+
+fviz_pca_ind(iris_pca,
+             col.ind = groups,
+             geom.ind = "point",
+             addEllipses = TRUE,
+             legend.title = "Species")
+fviz_pca_var(iris_pca,
+             repel = TRUE)
+fviz_pca_biplot(iris_pca,
+                col.ind = groups,
+                geom.ind = "point",
+                col.var = "black", repel = TRUE,
+                legend.title = "Species")
+```
+
+```{r}
+bird <- read_csv(here::here("example_data", "birdabund.csv"))
+bird <- bird %>% 
+  mutate(abund_binary = ifelse(abund > 20, "high", "low"))
+```
+```{r}
+bird_active <- bird %>% 
+  mutate(yr.isol = 2019 - yr.isol, log_area = log(area), log_dist = log(dist), log_ldist = log(ldist)) %>% 
+  select(log_area, yr.isol, log_dist, log_ldist, graze, alt)
+bird_pca <- prcomp(bird_active, scale = TRUE)
+fviz_eig(bird_pca)
+```
+```{r}
+fviz_pca_ind(bird_pca,
+             geom.ind = "point",
+             col.ind = bird$abund,
+             legend.title = "Abundance")
+fviz_pca_var(bird_pca,
+             repel = TRUE)
+fviz_pca_biplot(bird_pca,
+                geom.ind = "point",
+                col.ind = bird$abund,
+                col.var = "black", 
+                repel = TRUE,
+                gradient.cols = c("midnightblue","turquoise1"),
+                legend.title = "Abundance")
+```
+```{r}
+(eig.val <- get_eigenvalue(bird_pca))
+
+var <- get_pca_var(bird_pca)
+var$contrib[,1:2]
+```
+```{r}
+fviz_pca_biplot(bird_pca,
+                geom.ind = "point",
+                col.ind = bird$abund_binary,
+                addEllipses = TRUE,
+                col.var = "black", 
+                repel = TRUE,
+                legend.title = "Abundance")
+```
+
+
+
+
+
+

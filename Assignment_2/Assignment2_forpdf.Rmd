@@ -1,10 +1,9 @@
 ---
-title: "Assignment 2: Analyze a Linear Model"
+title: 'Assignment 2: Analyze a Linear Model'
 author: "Penny Kahn"
-output: 
-  html_document:
-    toc: TRUE
-    theme: yeti
+output:
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -42,7 +41,7 @@ snowflake <- read_csv(here::here("Assignment_2", "mod_attempt2.csv"))
 
 Let's take a look at the data using the datatable() function from the "DT" package. This prints a nice looking, interactive table.
 ```{r}
-datatable(snowflake)
+snowflake
 ```
 
 We'll visualize it further with a scatter plot. The different colors indicate time point.

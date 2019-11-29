@@ -1,0 +1,243 @@
+---
+title: 'Rworkshop10: Bootstrapping'
+author: "Penny Kahn"
+date: '2019-11-07'
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(here)
+library(boot)
+```
+
+#Bootstrap resampling methods
+This workshop will illustrate some of the principles of data analysis using resampling. See the “Resample” tab on the R tips help pages for advice.
+
+
+
+#Methods summary
+Here is a quick summary of the two methods, the bootstrap and the permutation test, applied in today’s workshop.
+
+##Boostrap estimation
+The bootstrap is is a computer-intensive method used to calculate standard errors for an estimate and to obtain approximate confidence intervals for a population parameter. It works well in most situations except when sample size is small. The basic procedure is:
+
+1. Take a random sample of the data, sampling with replacement
+2. Compute the statistic on the bootstrap replicate obtained in (1)
+3. Repeat steps (1) and (2) many times (e.g., B = 10000), saving the result each time
+4. Plot the B bootstrap replicate estimates to visualize the shape of the sampling distribution
+5. Calculate the standard deviation of the B boostrap replicate estimates to obtain the standard error of the estimate
+
+It is also possible to use the bootstrap replicates to obtain a confidence interval for the parameter using a percentile method and the BCa method.
+
+##Permutation test
+The permutation test is a computer-intensive method for hypothesis testing. It is used to generate a null distribution for a test statistic measuring association between two variables (or differences between groups). When used to test differences between two or more groups in a numerical variable the method assumes that the distributions have equal shape. However, the method is fairly robust to departures from this assumption. The steps are:
+
+1. Create a randomized data set in which the values for one of two variables are randomly reassigned to subjects (without replacement)
+2. Calculate the test statistic measuring association between the variables (or difference between groups) on the randomized sample obtained in (1)
+3. Repeat steps (1) and (2) many times (B = 10000), saving the result each time
+4. Plot the B values of the test statistic generated in (3) to visualize the shape of the null distribution
+5. Using the distribution of the test statistic from (3), calculate the tail probability for the observed value of the test statistic (calculated on the original data). Multiply this number by 2 if test is two-sided.
+
+---
+
+##Caribbean bird immigration
+Birds of the Caribbean islands of the Lesser Antilles are descended from rare immigrants from larger islands and the nearby mainland. The data here are the approximate dates of immigration, in millions of years, of each of 37 bird species now present on the Lesser Antilles (Ricklefs and Bermingham 2001, Science 294: 1522-1524). The dates were calculated from the difference in mitochondrial DNA sequences between each of the species and its closest living relative on larger islands or the mainland. The data can be downloaded here.
+```{r}
+antilles <- read_csv(here::here("example_data", "antilles.csv"))
+```
+
+1. What shape is the frequency distribution of estimated immigration dates? Use a graph to display it.
+```{r}
+antilles %>% 
+  ggplot(aes(x=immigration.date))+
+  geom_histogram(color="black", fill="firebrick", alpha = 0.8)+
+  theme_bw()
+```
+
+2. What are the mean and median dates of immigration, in millions of years? Why are the two values so different?
+
+- The data is very skewed to the right, that is why the mean is so much higher than the median
+```{r}
+mean(antilles$immigration.date)
+median(antilles$immigration.date)
+```
+
+3. Obtain a single bootstrap replicate of the immigration dates and plot the results. How different is the frequency distribution from that of the data?
+```{r}
+boot <- sample(antilles$immigration.date, replace = TRUE)
+
+hist(boot)
+```
+
+4. Write a short loop to generate 10000 bootstrap replicate estimates for the sample median immigration date. It is a good idea to begin by using only 10 replicates until your loop is tested and found to be working smoothly. Store the resulting medians in a vector.
+```{r}
+myMeds <- vector("numeric", length = 10000)
+
+for(i in 1:10000){
+  samp <- sample(antilles$immigration.date, replace = TRUE)
+  myMeds[i] <- median(samp)
+}
+
+print(myMeds)
+```
+
+
+
+5. Plot the frequency distribution of your results from (4). What does this frequency distribution estimate?
+```{r}
+hist(myMeds)
+hist(z$t)
+```
+
+6. Using your results in (4) to calculate a standard error for the sample median*.
+```{r}
+sd(myMeds)
+```
+
+7. Most of the familiar estimators of population parameters, such as sample mean and variance, are unbiased, which means that the mean of its sampling distribution equals the parameter value being estimated. For example, the mean of the sampling distribution of the sample mean is $, the very parameter being estimated. The sample mean is an unbiased estimator. However, some estimators are biased, and the bootstrap is often used to estimate bias. Is the median of immigration dates biased? Calculate the mean of the bootstrap replicate estimates of the median immigration date to estimate the bias**.
+```{r}
+mean(myMeds) - mean(antilles$immigration.date)
+```
+
+8. Use the percentile method (check the quantile() function) to generate an approximate 95% confidence interval for the population median***.
+```{r}
+quantile(myMeds, probs = c(0.025,0.975))
+```
+
+9. Apply the boot package to generate a more accurate boostrap confidence interval for the median using the BCa method.****
+```{r}
+boot.mean <- function(antilles,i){boot.median <- median(antilles[i])}
+z <- boot(antilles$immigration.date, boot.mean, R = 10000)
+z
+```
+```{r}
+sd(z$t)
+mean(z$t)
+boot.ci(z, type = "bca")
+```
+
+* will be about 2.5
+** will be about 4.4 (This exceeds the median of the original sample, 3.5. So, our bootstrap tells us that our statistic, the sample median, tends to overestimate the true median by about 0.9.)
+*** should be about (1.8, 11.1)
+**** should be about (1.8, 10.6)
+
+---
+
+##Trillium fragmentation
+Logging in western North America impacts populations of western trillium (Trillium ovatum), a long-lived perennial inhabiting conifer forests. Jules and Rathcke (1999, Conservation Biology 13:784-793) measured attributes of eight local populations of western trillium confined to forest patches of varying size created by logging in southwestern Oregon. A subset of their data are here. The variables included are
+
+population
+forest fragment size (ha)
+distance between local population and forest edge (m)
+years since isolated
+number of plants in local population
+proportion of plants consumed by deer in of the years of study
+recruitment rate, the density of new plants produced in each population per year
+
+```{r}
+trillium <- read_csv(here::here("example_data", "trillium.csv"))
+```
+
+1. Plot recruitment against fragment size.
+```{r}
+trillium %>% 
+  ggplot(aes(x=fragsize.ha, y=recruitment))+
+  geom_point()
+```
+
+2. From visual inspection of your plot in (1), choose an appropriate transformation of one or both variables to meet (roughly) the assumptions of linear regression*.
+```{r}
+trillium %>% 
+  ggplot(aes(x=log(fragsize.ha), y=log(recruitment)))+
+  geom_point()
+```
+```{r}
+trillium <- trillium %>% 
+  mutate(logFrag = log(fragsize.ha), logRec = log(recruitment))
+```
+
+
+3. Using a linear model on your transformed data, estimate the slope of the linear regression of recruitment on fragment size. Inspect the diagnostic plots. These will reveal that although transformation improved matters, there might still be some issues regarding the assumptions of equal variance of residuals. A small sample size makes it difficult to pursue the issue much further. Let’s take a conservative approach for the purposes of this exercise and use a nonparametric approach, the permutation test, to test the null hypothesis of zero slope. We’ll use the transformed data because the transformation rendered the relationship more linear (it is the slope of a line that we wish to test) and it eliminated the problem of one or two data points having excessive influence.
+```{r}
+mod <- lm(logRec ~ logFrag, data = trillium)
+mod
+```
+```{r}
+plot(mod)
+```
+
+4. Using the permutation test, create a null distribution for the slope of the linear regression.
+```{r}
+z <- vector("numeric", length = 1000)
+for(i in 1:1000){
+  trillium$x1 <- sample(trillium$logRec, replace = FALSE)
+  mod1 <- lm(logFrag ~ x1, data = trillium)
+  z[i] <- coef(mod1)["x1"]
+}
+
+z
+```
+
+5. Plot the null distribution. Compare the distribution to the value of the slope you estimated in (3). Is your slope near the middle or toward one of the tails of the null distribution?
+```{r}
+hist(z)
+```
+
+6. Calculate the tail probability using the results from your analysis of the data in (3) and the null distribution.
+```{r}
+
+```
+
+7. Use your results in (6) to calculate an approximate P-value for the test of the null hypothesis of zero slope**.
+```{r}
+
+```
+
+8. Note: As we’ve discussed in class, the analysis of data shouldn’t end with a P-value because it tells us nothing about magnitudes of effects. A drawback of the permutation test is that it is entirely focused on the P-value and provides no estimates of parameters. The bootstrap is more informative, but sample size here is probably too small for a reliable outcome.
+```{r}
+
+```
+
+* transform both log
+** will be about 0.26
+
+---
+
+##Vampire attack
+The vampire bat, Desmodus rotundus, commonly feeds on the blood of domestic cattle. It prefers cows to bulls, which suggested that the bats might be responding to a hormonal cue. To explore this, the frequency of vampire bat attacks on cows in estrous was compared with attacks on anestrous female cows. The following data are from one night of observation (D. C. Turner 1975, The vampire bat: A field study in behavior and ecology. Johns Hopkins Press, Baltimore).
+
+Female cows in estrous	Anestrous female cows
+Bitten by vampire bat	15	6
+Not bitten	7	322
+To begin the analysis, create a data frame with two variables (estrous and bitten) each with two states (yes/no) representing the above measurements for the 350 cows. 15 of the cows should have “yes” for both variables, 7 should have “yes” for estrous and “no” for bitten, and so on.
+
+Create a 2x2 contingency table to verify the results of (1).
+
+Use a conventional χ2 contingency test to test the null hypothesis of no difference in the frequency of cows bitten by vampire bats between estrous and anestrous cows. Use the “chisq.test” command in R (type ?chisq.test for help). Store the results in an object (e.g., z). If you execute the command correctly you should receive a warning. What is the source of the problem? To determine this, examine the expected frequencies (they are stored in the results object, e.g.,that you named z)*.
+
+Use the permutation test instead to test the null hypothesis. (HINT: check if this may have already be implemented in the function.)
+
+Calculate the odds ratio using the variables you created in (1). The odds ratio is a commonly used measure of association in 2x2 tables. It is the ratio of the odds of success in a treatment group compared to the odds of success in a control group. Here, the ratio will be odds of estrous cows being bitten / odds of anestrous cows being bitten. The quickest way to calculate odds ratio from a table of frequencies is OR = (a/c) / (b/d), where
+
+treatment
+
+control
+
+success
+
+a
+
+b
+
+failure
+
+c
+
+d
+
+A problem arises if one of the four table frequencies is 0, which can create an odds ratio of 0 or infinity. Although not optimal, a standard fix is to add 0.5 to each cell of the table before calculating OR.
+
+Use the bootstrap to obtain a standard error for the estimate of odds ratio. By chance your resampling might occasionally produce a zero for the number of anestrous cows bitten, which will result in a division by zero and a value of “Inf” for the odds ratio or relative risk. One solution is to add 0.5 to each cell of the 2x2 table before calculating the odds ratio. Otherwise, just remove the “Inf” values from the vector of results using
+
+z <- z[is.finite(z)]
+Use the percentile method to obtain a bootstrap 95% confidence interval for the odds ratio.

@@ -1,0 +1,188 @@
+---
+title: "Rworkshop12"
+author: "Penny Kahn"
+date: '2019-11-28'
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(ape)
+library(phytools)
+```
+
+# Rockfish evolution
+Rockfish (genus Sebastes) are a hugely diverse group of mainly Pacific Ocean fishes. There are over 100 recognized species inhabiting everything from the intertidal zone to waters over 2000 m deep. They have some of the highest longevities of any fish, with a maximum reported age of 205 years. Data on maximum body size (length), age (lifespan) and habitat depth of 56 species is provided here in a .csv file. The data were gathered from FishBase, from Love (2002), and by Travis Ingram.
+
+A phylogenetic tree of the 56 species is provided in a text file here. The tree, from Hyde & Vetter (2007), is a consensus Bayesian tree based on 7 mitochondrial and 2 nuclear genes.
+
+1. Download the file containing the phylogenetic tree. Inspect to determine whether it is in newick or nexus format and read into R using the appropriate command.
+```{r}
+mytree <- read.tree(file.choose("rockfish.phy"))
+```
+
+2. Plot commands in ape will change the graphical parameters from the defaults. Save a copy of the default values by executing the following command: old.par <- par(). We’ll make use of old.par later.
+```{r}
+old.par <- par()
+```
+
+3. Plot the phylogeny. You may have to adjust an option to minimize overlapping the labels. Take a moment to admire the structure of the tree. Branch lengths are intended to reflect time. Does it look like the genus diversified mainly in a sudden early burst, a recent explosion, or a steady growth in the number of species through time? Notice that all the tips are contemporaneous.
+```{r fig.height=8, fig.width=10}
+plot(mytree, cex=0.7)
+```
+
+4. Obtain the species measurements from the data file and input to a data frame. Check that the species names in the trait file and in the phylogenetic tree are identical and are listed in the same order (this is a requirement for the methods we will be using from the ape package).
+```{r}
+rockfish <- read.csv(file.choose(), stringsAsFactors=FALSE)
+
+rockfish %>% 
+  mutate(from.phy = mytree$tip.label, same = if_else(species == from.phy, "TRUE", "FALSE")) %>% 
+  select(species, from.phy, same)
+```
+
+5. Which of the traits show strong phylogenetic signal? First, use a method that places dots at the tips of the tree, with dot size reflecting the value for the trait. Is there a tendency for closely related species to be more similar in their trait values than more distantly related species?
+```{r}
+rownames(rockfish) <- rockfish$species
+rockfish <- rockfish[match(mytree$tip.label,rownames(rockfish)),]
+rockfish2 <- rockfish[, c("maxlength.cm", "maxage.y", "maxdepth.m")]
+
+dotTree(mytree, as.matrix(rockfish2)[,c("maxlength.cm")])
+dotTree(mytree, as.matrix(rockfish2)[,c("maxage.y")])
+dotTree(mytree, as.matrix(rockfish2)[,c("maxdepth.m")])
+```
+
+6. Next, calculate Pagel’s λ for each trait. Which traits show strong phylogenetic signal, according to this metric?
+```{r}
+length_lambda <- phylosig(mytree, as.matrix(rockfish2)[,c("maxlength.cm")])
+age_lambda <- phylosig(mytree, as.matrix(rockfish2)[,c("maxage.y")])
+depth_lambda <- phylosig(mytree, as.matrix(rockfish2)[,c("maxdepth.m")])
+
+length_lambda
+age_lambda
+depth_lambda
+```
+
+---
+
+# TIPS analysis
+
+Let’s begin with an analysis that ignores phylogeny, so that we have a baseline for comparison.
+
+1. Restore the default graphical parameters by executing par(old.par). It is not a huge issue if you skip this step (give it a try and see what happens).
+```{r}
+par(old.par)
+```
+
+2. Inspect scatter plots of the species data. Make any necessary transformations here to help meet the assumptions of linear models*.
+```{r}
+rockfish <- rockfish %>%
+  mutate(log_length = log(maxlength.cm), log_age = log(maxage.y), log_depth = log(maxdepth.m))
+```
+```{r fig.width=11}
+rockfish %>% 
+  ggplot(aes(x = reorder(species, log_length), y = log_length)) +
+    geom_point() +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90))
+
+rockfish %>% 
+  ggplot(aes(x = reorder(species, log_age), y = log_age)) +
+    geom_point() +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90))
+
+rockfish %>% 
+  ggplot(aes(x = reorder(species, log_depth), y = log_depth)) +
+    geom_point() +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+rockfish %>% 
+  ggplot(aes(x = log_length, y = log_age)) +
+    geom_point() +
+    theme_bw()
+
+rockfish %>% 
+  ggplot(aes(x = log_length, y = log_depth)) +
+    geom_point() +
+    theme_bw()
+
+rockfish %>% 
+  ggplot(aes(x = log_age, y = log_depth)) +
+    geom_point() +
+    theme_bw()
+```
+
+3. Choose one pair of variables in the data set to compare (suitably transformed). Carry out a linear model fit ignoring phylogeny for now.
+```{r}
+mod <- lm(log_age ~ log_length, data = rockfish)
+```
+
+4. Examine the diagnostic plots in (3) to check your assumptions.
+```{r}
+plots <- plot(mod)
+```
+
+5. Extract the regression coefficients and standard errors from the model object created in (3). Take note of the values for the slope estimate.
+
+- intercept: -0.2916
+- slope: 1.0495
+```{r}
+summary(mod)
+```
+
+6. Obtain the correlation coefficient between the variables used in (3). Take note of the value of the estimate.
+
+- adj. r-squared:  0.3725 
+
+---
+
+# PICs
+Let’s use the same variables and apply phylogenetically independent contrasts (PICs) instead.
+
+1. Convert the same two variables used in your TIPS analysis to phylogenetically independent contrasts. Create a scatter plot of the contrasts in your two variables. Are they associated?
+```{r}
+length1 <- pic(rockfish$log_length, mytree)
+age1 <- pic(rockfish$log_age, mytree)
+
+plot(length1, age1)
+```
+
+2. Fit a linear model to the independent contrasts you created in (1). Use the contrasts corresponding to the same response and explanatory variables as in your TIPS analysis. Examine the diagnostic plots to check the linear model assumptions.
+```{r}
+data2 <- tibble(length1, age1)
+
+mod2 <- lm(age1 ~ length1, data = data2)
+
+plot(mod2)
+```
+
+3. Extract the regression coefficients and standard errors from the model object created in (2). How does the slope* compare with that obtained in your TIPS analysis? Is the standard error from the PICs analysis greater than, less than, or the same as in your TIPS analysis? (Meta-analyses have often found that PICs yield a similar answer to an analysis that ignores phylogeny, but your specific case might or might not.)
+
+- mod2 1.18939 < mod1 1.0495
+```{r}
+summary(mod2)
+```
+
+4. Calculate the correlation coefficient** on the independent contrasts (consult the R tips pages if necessary).
+- 0.3789
+
+---
+
+# General least squares
+1. Carry out the equivalent analysis to PICs using general least squares instead. Confirm that the slope coefficient and its standard error are identical to that obtained in the analysis of independent contrasts.
+
+2. Examine the residual plot from the model fit in (1). Notice that the mean of the residuals is not zero (calculate the mean of the residuals to confirm this). This is because the GLS analysis does not weight each of the observations equally.
+
+3. (In effect, GLS fits a linear model to the variables after transforming them according to values computed from the phylogenetic correlation matrix. A disadvantage of the residual plot here is that we aren’t seeing the diagnostic plot for the transformed variables, which would be nice. These can be calculated “by hand” but it is no fun*.)
+
+* Actually, it is quite fun.
+
+---
+
+# Adjusting for Pagel’s λ
+Does incorporating phylogeny result in a better fit to the data than ignoring phylogeny? Use Pagel’s λ to help decide this. Using GLS, fit your model again while fixing Pagel’s λ = 1. Refit, but this time using λ = 0. Which lambda fits best? How large is the difference in their AIC scores?
+
+Find the maximum-likelihood estimate of λ*. Is the AIC score improved when a linear model is fitted using this maximum likelihood value for λ ?
+
+Repeat the analyses with the other pairs of variables to decide whether including phylogeny generally improves the fit of linear models to these data.

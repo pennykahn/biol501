@@ -1,0 +1,194 @@
+---
+title: "Rworkshop12_metaanalysis"
+author: "Penny Kahn"
+date: '2019-11-21'
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(here)
+library(devtools)
+library(ggbiplot)
+library(GGally)
+library(MASS)
+theme_set(theme_classic())
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Multivariate methods
+In this workshop will explore three commonly used methods for visualizing multivariate data, ordination, and classification: principal components analysis, simple correspondence analysis, and discriminant function analysis.
+
+---
+
+## *Anolis* lizard variation
+Anolis lizards have undergone a dramatic ecological and morphological radiation on large islands of the Greater Antilles in the Caribbean ocean. The species perch on a diversity of substrates, including tree trunks, twigs, and grass, and show adaptations in body size, limbs, and tail dimensions to these substrates. We encountered the beasts in the very first workshop. Here we will use principal component to visualize and describe major directions of variation in the group.
+
+Mahler et al (2013, Science 341: 292-295) investigated patterns of morphological convergence in body form among unrelated species of Anolis using similar perch types. Mean measurements of all species are here. They were obtained from the Dryad depository (Mahler DL, Ingram T, Revell LJ, Losos JB (2013) Data from: Exceptional convergence on the macroevolutionary landscape in island lizard radiations. Dryad Digital Repository. doi:10.5061/dryad.9g182).
+
+The following variables are included. Most are self-explanatory. SVLength is snout-vent length. “Foot” refers to hindlimb and “hand” to forelimb. “Fingers” and “toes” refer to forelimb and hindlimb 4th digits. Lamellae are adhesive toe pads. All length variables are in mm, whereas the lamellae traits refer to counts.
+
+Species
+Island
+Ecomorph
+SVLength
+FemurLength
+TibiaLength
+FootLength
+ToeLength
+HumerusLength
+RadiusLength
+FingerLength
+FootLamellae
+HandLamellae
+TailLength
+
+The data were log-transformed to put them on a comparable scale. This worked reasonably well for all the length traits, but FootLamellae and HandLamellae have a much lower variance than the length traits. (This is one instance in which using the correlation matrix might be advised, but to keep things simple, let’s not go there yet.)
+
+1. Read the data from the file and inspect the variables. Most of the species are classified into 6 “ecomorph” categories according to ecological similarity, especially on the basis of the type of perch used. Species not belonging to any specific category are labeled “Unique”.
+```{r}
+anolis <- read_csv(here::here("example_data", "anolis_convergence.csv"))
+str(anolis)
+```
+
+
+2. Use pairwise scatter plots to examine associations among variables. Which variables are most strongly correlated with one another? Positively or negatively?
+```{r fig.height=12}
+pairs(anolis[,4:14])
+```
+
+
+3. Carry out a principal components analysis on the Anolis species mean measurements.
+```{r}
+z <- prcomp(anolis[,4:14])
+```
+
+4. Examine the proportion of variance explained by each principal component. What proportion of the variance is accounted for by the first principal component? By the first two? How many components are needed to capture 99% of the total variance among species?
+```{r}
+print(z)
+```
+
+
+
+5. What are eigenvalues? Create a scree plot to visualize the magnitudes of the eigenvalues.
+```{r}
+z$sdev^2 
+screeplot(z, type="barplot")
+```
+
+
+6. Create a biplot to visualize the contribution of traits to the first two principal components. Which traits contribute most to PC1? Which vary most with PC2?
+```{r}
+ggbiplot(z, ellipse = TRUE, choices = c(1,2), groups = anolis$Ecomorph)
+```
+
+
+7. What are eigenvectors? Examine and interpret the eigenvectors for the first two principal components. Which variables contribute the most to the first two principal components? Can any of the principal components be interpreted as a general “size” variable? Which one? How much of the variance does it account for?
+```{r}
+z$rotation[, 1:2]
+```
+
+8. Compare the eigenvectors for the first two principal components to the biplot you generated for these same two components. Do you see a correspondence?
+- The PC1 seems to describe size, and especially leg length. The PC2 describes the number of lamellae on the toe pads. PC2 makes sense because the ecomorphs higher up in the trees need to have stickier feet. PC1 makes sense bc a twig ecomorph needs to be a lot smaller than a crown giant.
+
+9. Do the other eigenvectors have as straightforward an interpretation? For example, which traits contribute to principal components 3 and 4?
+
+- PC4 is almost entirely described by variation in the snout-vent length, so overall size. PC3 is less interpretable.
+```{r}
+z$rotation[, 1:4]
+```
+
+10. Save the scores for the first four principal components, the measurements of every individual along these principal axes, into the Anolis data frame.
+```{r}
+predics <- predict(z) 
+predics <- as.data.frame(predics, stringsAsFactors = FALSE)
+predics <- subset(predics, TRUE, c(PC1:PC4))
+anolis2 <- predics %>% 
+  cbind(anolis)
+```
+
+11. Illustrate the range of phenotypes on the four islands of the Greater Antilles in a scatter plot of the first two principal components. (If you use the option pch = Island in your plot command, the symbol plotted for each species will be the first letter of the name of the island on which it occurs. Make sure that “Island” is a character, not a factor) Do all islands have the same range of phenotypes? Jamaica is the youngest island and has the fewest species. How does the range of phenotypes on this island compare with that on the older islands?
+```{r}
+anolis2 %>% 
+  ggplot(aes(x = PC1, y = PC2)) +
+    geom_point(aes(color=Island)) 
+```
+
+12. Re-plot the first two principal components, but this time use different symbols for the different ecomorphs. The principal components analysis is blind to the ecomorphs of the species, yet species of the same ecomorph tend to cluster together. What does this imply about the body forms of species utilizing similar ecological resources?
+```{r}
+anolis2 %>% 
+  ggplot(aes(x = PC1, y = PC2)) +
+    geom_point(aes(color=Ecomorph))
+```
+
+13. On the basis of the differences observed, and your earlier interpretation of the eigenvectors, which ecomorph seems to have the largest overall body size? Which ecomorphs are the smallest?
+- Crown-giant has the largest, twig has the smallest
+
+14. On the basis of the differences observed, and your earlier interpretation of the eigenvectors, which ecomorphs likely have the longest tails, relative to other dimensions? Which likely have the shortest tails? Confirm your answer by comparing the mean tail lengths of the different ecomorphs.
+- Because of the negative loading, I think grass-bush and trunk-ground have the longest tails.
+```{r}
+anolis2 %>% 
+  mutate(tailprop=TailLength/SVLength) %>% 
+  ggplot(aes(x=Ecomorph, y=tailprop))+
+  geom_boxplot(aes(color=Ecomorph))
+```
+
+---
+
+##Rodent ordination
+Correspondence analysis is used to ordinate species assemblages based on species composition and similarity in species abundances. The data for this exercise are rodent species abundance from 28 sites in California (Bolger et al. 1997, Response of rodents to habitat fragmentation in coastal Southern California, Ecological Applications 7: 552-563). The file in contingency table format is located here. I modified the data table downloaded from the web site of Quinn and Keough (2002, Experimental Design and Data Analysis for Biologists, Cambridge Univ. Press, Cambridge, UK).
+
+The 9 species are indicated by variable (column) names. Genus abbreviations are: Rt (Rattus), Rs (Reithrodontomys), Mus (Mus), Pm (Peromyscus), Pg (Perognathus), N (Neotoma) and M (Microtus). Rattus and Mus are invasive species, whereas the others are native.
+
+1. Download the file and read into a data frame in R. Inspect the data frame to get a sense of which species are abundant and which are rare, which are widely distributed and which occur infrequently. The first column of this data frame will have the site variable. Make sure not to include the site variable in the correspondence analysis. Also, the plots will use the row names of the data frame as the site names. If you want to see the actual site names rather than row numbers in your plots, rename the row names accordingly.
+```{r}
+rodent <- read_csv(here::here("example_data", "rodent.csv"))
+rodent2 <- subset(rodent, TRUE, c(Rt.rattus:M.californicus))
+```
+
+2. Carry out a correspondence analysis using these data. Extract two axes from the species abundance data at sites. How strongly are the site and species data correlated along the two axes?
+```{r}
+z <- corresp(rodent2, nf = 2)
+z$cor
+```
+
+3. Plot the results from (2). Overlap of points may make it difficult to identify some plots and species (unfortunately there’s no built-in “jitter” option for this plot). You can use the species scores to help identify them.
+```{r}
+plot(z)
+```
+
+4. Use the plot in (3) and the species scores to interpret the results of your analysis. How are each of the species contributing to the correspondence axes? Do you notice any differences between the invasive and native species in their distributions?
+```{r}
+z$cscore
+```
+
+5. As you probably surmised, the results of the first round of analysis were chiefly driven by the introduced species. To examine the native species as well, create a new data frame with Rattus and Mus deleted. This will generate some sites with no species present. Delete these sites from the new data frame.
+```{r}
+rodent3 <- subset(rodent2, TRUE, c(Pm.californicus:M.californicus))
+rodent4 <- rodent3[1:6,1:7]
+rodent5 <- rodent3[12:13, 1:7]
+rodent6 <- rodent3[26:28, 1:7]
+rodent7 <- rodent3[23, 1:7]
+rodent8 <- rodent3[18:20, 1:7]
+rodents <- rbind(rodent4, rodent5, rodent6, rodent7, rodent8)
+```
+
+6. Carry out a correspondence analysis on the native species. Extract two axes from the species abundance data at sites. How strongly are the species and site data correlated?
+```{r}
+w <- corresp(rodents, nf = 2)
+w$cor
+```
+
+
+7. Plot the results from your analysis in (6). Is the plot useful in helping you to identify which species tend to co-occur? And which species tend not to occur together? Confirm this by looking at the original data. Are your interpretations correct?
+```{r}
+plot(w)
+```
+
+8. Based on the plot in (7), which sites tend to have similar species composition and abundances? Which have different species assemblages? Confirm this by looking at the original data.
+
+9. Based on the same plot, can you match the species to specific sites? Confirm this by looking at the original data. It would be easier to compare the plot of the correspondence analysis with the abundance data in the data frame if the rows and columns of the data frame were reordered according to the position of sites (rows) and species (columns) along the first axis from the correspondence analysis. Print the data frame with this reordering. The positions of the sites and species along the first axis are given in the first columns of the rscore and cscore matrices in your correspondence model object.
+With this ordering of the original abundance data, you can see how the different sites (rows) might lie along some environmental gradient. However, this is inferred only from the ordering of species abundances among the sites. No environmental variable has been included in this analysis.
+

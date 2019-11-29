@@ -1,0 +1,175 @@
+---
+title: "Rworkshop11"
+author: "Penny Kahn"
+date: '2019-11-14'
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(here)
+```
+
+#Meta-analysis
+In this workshop we explore the “analysis of analyses”. The first exercise will require you to make the step-by-step calculations for fixed and random effects models. The goal is to give a sense of why the two models yield different results. It would be truly wonderful if lm and lmer could take care of all the gritty calculations in a familiar setting, but it is not easy to get the correct variances using these programs. So we’ll start by going step by step. See the “Meta-analysis” tab at the R tips pages for help.
+
+---
+
+##Aggressive bibs
+The black throat patch or bib of male house sparrows, Passer domesticus, is called a “badge” because bib size seems to be correlated with male social status. Sanchez-Tojar et al. (2018) compiled results of published and unpublished studies that investigated the relationship between male badge size and measurements of male size, behavior and reproductive success (Meta-analysis challenges a textbook example of status signalling and demonstrates publication bias. eLife 2018;7:e37385). The data are here.
+
+```{r}
+bibs <- read_csv(here::here("example_data", "sparrow.csv"))
+```
+
+The correlation coefficient r was the effect size measuring association between bib size and these other traits. 87 estimates of the correlation between bib size and male fighting ability (“status”) are included. The study included both published and unpublished data obtained from researchers. These data are from the Supplement file “Meta4.csv” of Sanchez-Tojar et al. (2018). Most of the correlations were obtained from behavioral observations made of birds in aviaries.
+
+1. View the data and examine it closely. The data set is not large, but it has aspects in common with larger compilations used in meta-analyses, and raises many of the same questions. First, there are many more entries than published studies. Repeated entries from the same study represent different nearby populations, or measurements taken in different years or on different interacting groups of individuals from the same population. Often these groups are small. Can the 87 effect sizes in the table therefore be considered independent? Should we average all the values from the same population, or from the same study, before continuing? Welcome to meta-analysis.
+
+For the purposes of this exercise, let’s treat the 87 effect sizes as though they are independent and belong to a single fixed class. I hope this does not shock you.
+```{r}
+print(bibs)
+```
+
+
+2. Create a simple scatter or “funnel” plot depicting the relationship between effect size and sample size for the house sparrow data. Include a dashed line in the plot for r=0. Does it show the expected funnel shape? Why?
+```{r}
+funnel <- bibs %>% 
+  ggplot(aes(x = N, y = r, color = published))+
+  geom_point()+
+  geom_hline(linetype= 2, yintercept = 0)
+```
+
+3. Statistical analysis of correlations begins by converting r to the Fisher’s z-scale. The reason is that on the z-scale, the sampling distribution for the correlation is approximately normal and the standard error is independent of z. The transformed variable is indicated by the variable Zr. The transformation is
+z=0.5ln((1+r)/(1−r)), or equivalently, [See website].
+
+4. A convenient feature of the Fisher z is that the approximate standard error of an estimate depends only on the sample size N (i.e., number of birds) used in each study. The squared standard error is indicated by the variable VZr. The formula is [See website].
+
+
+###Fixed effects meta-analysis
+Under the fixed effects model, we assume that all studies in the meta-analysis share the same true effect size. The variation among the studies are assumed to result only from sampling error (i.e., chance). For the purposes of this exercise, let’s begin by fitting the fixed effects model to the sparrow data. Perhaps the fixed effects model is reasonable: the different studies were all carried out on the same species (house sparrow), and they correlated the same variables measured in similar (though not identical) ways. Fitting the fixed effects model involves calculating a weighted average of the separate correlations to yield an estimate the one true effect size.
+
+1. To estimate the mean effect size, we will weight each correlation according to the magnitude of its sampling variance, which takes into account the different sample sizes of the studies. Each weight is the inverse of the squared standard error. Calculate the weights for Fisher’s z for the sparrow data. The formula for the standard error is given above.
+```{r}
+bibs2 <- bibs %>% 
+  mutate(SEz = (1/sqrt(N-3))) %>% 
+  mutate(VZr = SEz^2) %>% 
+  mutate(weight = 1/VZr)
+```
+
+2. Fit the model by calculating the weighted mean, z¯, of the z-transformed correlations. R will calculate a weighted mean if you ask it. The result is your estimate of the true mean effect size. In what way does it differ from the unweighted mean of the z-transformed correlations?
+```{r}
+bibMean <- weighted.mean(x = bibs2$Zr, w = bibs2$weight)
+
+bibMean
+```
+
+3. Calculate the standard error of the weighted mean. This standard error measures uncertainty of the estimate of true effect size.
+```{r}
+bibSE <- sqrt(1/sum(bibs2$weight))
+
+bibSE
+```
+
+4. Calculate an approximate 95% confidence interval for the effect size using the normal approximation.
+```{r}
+crit <- qnorm(1 - 0.05/2)
+
+CIlow <- bibMean - crit*bibSE
+CIhigh <- bibMean + crit*bibSE
+
+CIlow
+CIhigh
+```
+
+5. Convert your estimated mean effect size from (2) back to the untransformed correlation, to obtain the mean effect size r¯. This requires back-transforming,* r¯=tanh(z¯) or, equivalently, r¯=(e2z¯−1)/(e2z¯+1). Add a horizontal line indicating the mean effect size to your funnel plot created in the previous section.
+```{r}
+rbar <- tanh(bibMean)
+```
+```{r}
+funnel +
+  geom_hline(yintercept = rbar, color = "green")
+```
+
+
+6. Apply the same back-transformation to the lower and upper limits of your confidence interval in (4) to yield the 95% confidence interval for the mean correlation coefficient.**
+```{r}
+(CIlow_bt <- tanh(CIlow))
+(CIhigh_bt <- tanh(CIhigh))
+```
+
+* 0.162
+** (0.086 0.236)
+
+
+
+###Random effects meta-analysis
+Under the random effects model we assume that each study estimates a system-specific effect size. There is no “one true” effect size under this model, only a mean effect size. This is more realistic than the fixed effects model for most data in ecology and evolution. Even though each study of male bibs was carried out on the same species (house sparrow), there is nevertheless likely to be heterogeneity from population to population, year to year, and even researcher to researcher if study methods are not the same.
+
+1. To fit the random effects model we need to estimate the variance among the system-specific effect sizes, τ2 (“tau squared”). One way to estimate it involves calculating the heterogeneity among the observed effect sizes (Q), and then “correcting” by subtracting the within-study sampling variance. The correction is needed because the variance among the observed effect sizes among studies is inflated by within-study sampling error. To begin, calculate Q, the weighted heterogeneity among the observed Zr values.
+```{r}
+Q <- sum(bibs2$weight*(bibs2$Zr-bibMean)^2)
+Q
+```
+
+2. Then estimate τ2 by subtraction, being careful not to allow a negative value (since τ2 is a variance, which can’t be negative).*
+```{r}
+tau2 <- (Q - (nrow(bibs2)-1)) / (sum(bibs2$weight) - sum((bibs2$weight)^2)/sum(bibs2$weight))
+tau2
+```
+
+3. Using τ2, calculate new weights for the effect sizes of each study under the random effects model. Examine these new weights w′ and compare them to the weights w under the fixed effects model. How are they different? Is as much weight given to large-sample studies, relative to small-sample studies, in the random effects model as in the fixed effects model?
+```{r}
+bibs2 <- bibs2 %>% 
+  mutate(new_weight = 1/(VZr+tau2))
+```
+
+4. Calculate the weighted mean effect size z¯ under the random effects model. The procedure is the same as that used before for the fixed effects model except that here we will use the new weights w′ calculated in the previous step. Back-transform to get the estimated mean correlation r¯.** Add the estimated mean correlation to your funnel plot. Compare your result to the effect size estimated under the fixed effects model. Is it the same?
+```{r}
+(new_bibMean <- weighted.mean(x = bibs2$Zr, w = bibs2$new_weight))
+(new_rbar <- tanh(new_bibMean))
+```
+```{r}
+funnel +
+  geom_hline(yintercept = rbar, color = "grey") +
+  geom_hline(yintercept = new_rbar, color = "green")
+```
+
+
+5. Calculate the standard error (SE) of the mean z¯. The formula is the same as that in the fixed-effects model except that here we will use the new weights.
+```{r}
+(new_bibSE <- sqrt(1/sum(bibs2$new_weight)))
+```
+
+6. Calculate the 95% confidence interval for the mean effect size under the random effects model. Is the confidence interval narrower, about the same, or wider than that calculated under the fixed effects model? Why?
+```{r}
+new_CIlow <- new_bibMean - crit*new_bibSE
+new_CIhigh <- new_bibMean + crit*new_bibSE
+
+new_CIlow
+new_CIhigh
+```
+
+7. Finally, back-transform to get the lower and upper limits of the 95% confidence interval for the mean correlation r¯. ***
+```{r}
+(new_CIlow_bt <- tanh(new_CIlow))
+(new_CIhigh_bt <- tanh(new_CIhigh))
+```
+
+* 0.1342
+** 0.1513
+*** (0.0224 0.2752)
+
+
+
+###Publication bias?
+Use the metafor package to examine and compare correlations from published and unpublished studies.
+
+To begin, use the package to recalculate the quantities that you obtained “by hand” in the above random effects meta-analysis on the z scale. Did you get the same results? So much easier!
+
+Redo the above analysis but use the restricted maximum likelihood estimates instead (the default) from now on.
+
+Produce a funnel plot of the data.
+
+Produce a forest plot of the data.
+
+Fit a meta-analysis model that includes the moderator variable “publication”. Use the summary command to estimate the difference between the means for published and unpublished studies. (Note that these values are computed on the z-transformed scale.) Do published and unpublished studies yield different results?
