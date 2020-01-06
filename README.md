@@ -7,5 +7,7 @@ This repo contains the work I do in BIOL 501: Quantitative Methods in Ecology an
 
 [Assignment 2: Analyze linear model](https://pennykahn.github.io/biol501/Assignment_2/Assignment2.html)
 
+[Assignment 3: Model Selection](https://pennykahn.github.io/biol501/Assignment_3/Assignment3.html)
+
 
 
